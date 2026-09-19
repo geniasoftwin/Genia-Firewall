@@ -1,0 +1,36 @@
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 17
+VisualStudioVersion = 17.0.31903.59
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeniaFirewall", "GeniaFirewall\GeniaFirewall.csproj", "{451A6DB7-8E38-420D-84ED-245D12B7933E}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeniaFirewall.Protocol", "GeniaFirewall.Protocol\GeniaFirewall.Protocol.csproj", "{32D861D9-5145-405F-8C5C-FFC09565FB05}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "GeniaFirewall.Service", "GeniaFirewall.Service\GeniaFirewall.Service.csproj", "{6595D449-3047-478E-B7EA-26AD19DE545F}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{451A6DB7-8E38-420D-84ED-245D12B7933E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{451A6DB7-8E38-420D-84ED-245D12B7933E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{451A6DB7-8E38-420D-84ED-245D12B7933E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{451A6DB7-8E38-420D-84ED-245D12B7933E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{32D861D9-5145-405F-8C5C-FFC09565FB05}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{32D861D9-5145-405F-8C5C-FFC09565FB05}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{32D861D9-5145-405F-8C5C-FFC09565FB05}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{32D861D9-5145-405F-8C5C-FFC09565FB05}.Release|Any CPU.Build.0 = Release|Any CPU
+		{6595D449-3047-478E-B7EA-26AD19DE545F}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{6595D449-3047-478E-B7EA-26AD19DE545F}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{6595D449-3047-478E-B7EA-26AD19DE545F}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{6595D449-3047-478E-B7EA-26AD19DE545F}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {1CD3662B-AE26-47B1-8032-5B119E05A865}
+	EndGlobalSection
+EndGlobal

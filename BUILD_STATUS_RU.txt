@@ -1,0 +1,22 @@
+GeniaFirewall 0.7.3 Stable / 0.7.3.4
+IPC v13 / GeniaFirewall.Service.v13
+
+Source Ready final release promoted from the Windows-accepted RC1.
+Static checks are performed in the source preparation environment.
+IMPORTANT: Windows/.NET Desktop SDK is not available here, therefore dotnet publish and real WFP runtime tests must be executed on Windows.
+
+RC1 acceptance completed on Windows:
+- repeated Protection/backend switching without 0x80320033
+- revision 5 -> 22 without filter accumulation
+- WFP lifecycle cleanup-verified=yes, residual=0
+- filter geometry stayed at 68 (outbound=60, inbound=8)
+- GeniaProxy/TUN works with protection enabled
+
+Final Stable smoke gate on Windows:
+- published UI and Service file versions are 0.7.3.4
+- service 0.7.3.4 / IPC OK
+- dynamic WFP session
+- WFP lifecycle cleanup-verified=yes, residual=0
+- weight-plan=PROBE>APP>GLOBAL
+- IPv4 telemetry renders 127.0.0.1, not 1.0.0.127
+- startup not-found provider/sublayer results are labelled (ok)

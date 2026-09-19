@@ -1,0 +1,140 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.WindowTitle">GeniaFirewall 0.7.3 Stable</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.ModeLabel">Режим</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Mode.Normal">Нормальный</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Mode.BlockAll">Блокировать всё</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Mode.AllowAll">Разрешить всё</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Mode.Monitor">Мониторинг</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.SearchTooltip">Поиск по имени или пути</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.SearchWatermark">Поиск...</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Clear">Очистить</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Add">+ Добавить</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Settings">Настройки</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.ProtectionOn">Защита ВКЛ</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.ProtectionOff">Защита ВЫКЛ</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.SortTooltip">Нажмите для сортировки</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.Allow">Разрешить</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.Block">Блокировать</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.Ask">Спрашивать</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.ShowPrompt">Показать запрос сейчас</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.MutePrompt">Не напоминать об этом приложении</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.Properties">Свойства</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.OpenLocation">Открыть расположение файла</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.ResetStats">Сбросить статистику</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.Remove">Удалить из списка</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.RemoveMissing">Удалить отсутствующие</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.Refresh">Обновить</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.QuickRules">Быстрое правило</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.EnableAll">EnableAll · разрешить всё</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.EnableAllHint">Разрешить приложению новые входящие и исходящие TCP/UDP IPv4/IPv6 соединения.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.DisableAll">DisableAll · блокировать всё</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.OutgoingOnly">Только исходящие</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.OutgoingOnlyHint">Разрешить приложению исходящие TCP/UDP IPv4/IPv6 соединения.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.IncomingOnly">Только входящие</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.IncomingOnlyHint">Разрешить новые входящие TCP/UDP IPv4/IPv6 соединения и блокировать новые исходящие соединения.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.QuickAsk">Спрашивать снова</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.Temporary">Временный доступ</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.TempTenMinutes">Разрешить на 10 минут</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.TempUntilExit">Разрешить до закрытия приложения</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Column.Program">Программа</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Column.Status">Статус</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Column.Trust">Доверие</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Column.Protocol">Протокол</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Column.Activity">Активность</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Column.Connection">Последнее соединение</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Empty.Title">Список приложений пуст</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Empty.Subtitle">В нормальном режиме новые сетевые приложения появятся автоматически.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Ready">Готово</sys:String>
+
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.Changed">Изменено</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.AutoAllowed">Авто-разрешено</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.Allow">Разрешено</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.Block">Заблокировано</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.Ask">Ожидает решения</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.EnableAll">Разрешить всё</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.OutgoingOnly">Только исходящие</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.IncomingOnly">Только входящие</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.DisableAll">Блокировать всё</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="RuleProfile.None">Обычное правило</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Temp.UntilExit">До закрытия</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Temp.TenMinutes">Временно · 10 мин</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Trust.System">🛡 Система</sys:String>
+
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Title">GeniaFirewall — сетевой доступ</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.ChangedTitle">GeniaFirewall — приложение изменилось</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Subtitle">Новое приложение использует сеть</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.ChangedSubtitle">Исполняемый файл изменился — старое разрешение временно не используется</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Publisher">Издатель</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Signature">Подпись</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Process">Процесс</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Parent">Родитель</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.CommandLine">Командная строка</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Network">Сеть</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.File">Файл</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Question">Как поступать с этим приложением?</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Info1">GeniaFirewall 0.7.3 Stable объединяет одновременные назначения одного EXE в один запрос. Для TCP по возможности показывается reverse-DNS имя, но правило применяется к приложению, а не к имени узла.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Info2">В WFP Normal приложение находится в карантине, пока ожидается решение. «Позже» и закрытие окна оставляют сеть заблокированной.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.DontRemind">Не напоминать об этом приложении</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Later">Позже</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Block">Блокировать</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Allow">Разрешить</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Scope.Always">Всегда</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Scope.TenMinutes">На 10 минут</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Scope.UntilExit">До закрытия</sys:String>
+
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Title">Настройки — GeniaFirewall</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Header">Настройки</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Version">0.7.3 Stable · WFP/TUN проверено</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Language.Group">Язык / Language</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Language.Auto">Автоматически (язык Windows)</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Language.Russian">Русский</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Language.English">English</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Start.Group">Запуск и уведомления</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.StartWindows">Запускать GeniaFirewall при входе в Windows</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.AutostartInfo">Автозагрузка использует Планировщик заданий Windows с повышенным уровнем. Перед запуском проверяется SHA-256 текущего portable EXE.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Check">Проверить</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Sound">Звуковой сигнал при запросе нового приложения</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Tray">Показывать служебные уведомления в трее</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.ResolveDns">Показывать имена узлов для TCP (reverse DNS)</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.ConfirmBlockAll">Подтверждать включение режима «Блокировать всё»</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.RemoveMissing">Удалять отсутствующие приложения при запуске</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Backend.Group">Firewall backend</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Backend.Compatibility">Windows Firewall Compatibility</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Backend.Wfp">GeniaFirewall WFP — самостоятельный inbound/outbound backend</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Backend.Info">WFP backend применяет правила напрямую через GeniaFirewall.Service на ALE_AUTH_CONNECT и ALE_AUTH_RECV_ACCEPT IPv4/IPv6 для TCP/UDP. В Normal неизвестный входящий трафик блокируется по умолчанию; EnableAll и IncomingOnly могут разрешать входящие соединения. Настоящий kernel pre-connect Ask остаётся следующим крупным этапом.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.TrueDelete">Безопасный Del: скрытый WFP-карантин после удаления записи</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.TrueDelete.Info">В Normal + GeniaFirewall WFP запись действительно исчезает из списка, но Service сохраняет скрытый ASK-BLOCK для этого EXE. При следующей сетевой активности приложение появляется заново как «Ожидает решения».</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Trusted.Group">Доверенные системные процессы</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Trusted.Enable">Автоматически разрешать строго проверенные системные процессы Windows</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Trusted.Info">Без запроса разрешаются только процессы из встроенного минимального списка после проверки системного пути и доверенной Authenticode-подписи Microsoft. Для svchost.exe дополнительно проверяются службы текущего PID.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Portable.Group">Portable-данные</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.DataFolder">Папка данных</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Open">Открыть</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.ExportImport">Экспорт / импорт конфигурации</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.ExportImport.Info">Правила, SHA-256 и поведенческие настройки сохраняются в JSON. Backend, автозагрузка и положение окна не переносятся.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Export">Экспорт</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Import">Импорт</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Diagnostics.Group">Диагностика</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.OpenLog">Открыть журнал</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Refresh">Обновить</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Maintenance.Group">Обслуживание</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Rebuild.Title">Пересобрать правила</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Rebuild.Info">Удаляет только правила группы GeniaFirewall и создаёт их заново из текущей базы.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Rebuild.Button">Пересобрать</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.RemoveRules.Title">Аварийно удалить правила</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.RemoveRules.Info">Удаляет правила активного backend GeniaFirewall и выключает защиту программы. Системные правила Microsoft Defender Firewall не затрагиваются.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.RemoveRules.Button">Удалить правила</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Common.Cancel">Отмена</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Common.Save">Сохранить</sys:String>
+
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Tray.Open">Открыть GeniaFirewall</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Tray.Mode">Режим</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Tray.ProtectionOn">Защита: ВКЛ</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Tray.ProtectionOff">Защита: ВЫКЛ</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Tray.TrustSystem">Доверять системным компонентам Windows</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Tray.Settings">Настройки...</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Tray.Exit">Выход</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Tray.Running">GeniaFirewall продолжает работать в трее.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Tray.Detected">Обнаружено новое приложение</sys:String>
+</ResourceDictionary>

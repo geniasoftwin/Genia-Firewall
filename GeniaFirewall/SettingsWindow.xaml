@@ -1,0 +1,178 @@
+<Window x:Class="GeniaFirewall.SettingsWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="{DynamicResource Settings.Title}"
+        Icon="Assets/geniafirewall.ico"
+        Width="580" Height="720"
+        MinWidth="540" MinHeight="500"
+        ResizeMode="CanResize"
+        WindowStartupLocation="CenterOwner"
+        Background="{StaticResource WindowBrush}"
+        ShowInTaskbar="False">
+    <Grid Margin="14">
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto" />
+            <RowDefinition Height="10" />
+            <RowDefinition Height="*" />
+            <RowDefinition Height="12" />
+            <RowDefinition Height="Auto" />
+        </Grid.RowDefinitions>
+
+        <StackPanel>
+            <TextBlock Text="{DynamicResource Settings.Header}" FontSize="18" FontWeight="SemiBold" />
+            <TextBlock Text="{DynamicResource Settings.Version}" Foreground="{StaticResource MutedTextBrush}" FontSize="11" Margin="0,2,0,0" />
+        </StackPanel>
+
+        <ScrollViewer Grid.Row="2" VerticalScrollBarVisibility="Auto">
+            <StackPanel>
+                <GroupBox Header="{DynamicResource Settings.Language.Group}" Padding="10" Margin="0,0,0,10">
+                    <ComboBox x:Name="LanguageComboBox" Height="30" VerticalContentAlignment="Center">
+                        <ComboBoxItem Tag="Auto" Content="{DynamicResource Settings.Language.Auto}" />
+                        <ComboBoxItem Tag="Russian" Content="{DynamicResource Settings.Language.Russian}" />
+                        <ComboBoxItem Tag="English" Content="{DynamicResource Settings.Language.English}" />
+                    </ComboBox>
+                </GroupBox>
+
+                <GroupBox Header="{DynamicResource Settings.Start.Group}" Padding="10" Margin="0,0,0,10">
+                    <StackPanel>
+                        <CheckBox x:Name="StartWithWindowsCheckBox" Content="{DynamicResource Settings.StartWindows}" Margin="0,0,0,5" />
+                        <TextBlock Text="{DynamicResource Settings.AutostartInfo}" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" FontSize="10.5" Margin="20,0,0,8" />
+                        <Grid Margin="20,0,0,9">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <TextBlock x:Name="AutostartStatusText" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" FontSize="10.5" VerticalAlignment="Center" Margin="0,0,10,0" />
+                            <Button Grid.Column="1" Content="{DynamicResource Settings.Check}" Style="{StaticResource SystemButton}" MinWidth="76" Click="CheckAutostart_Click" />
+                        </Grid>
+                        <CheckBox x:Name="PlayDetectionSoundCheckBox" Content="{DynamicResource Settings.Sound}" Margin="0,0,0,5" />
+                        <CheckBox x:Name="ShowTrayNotificationsCheckBox" Content="{DynamicResource Settings.Tray}" Margin="0,0,0,5" />
+                        <CheckBox x:Name="ResolveHostNamesCheckBox" Content="{DynamicResource Settings.ResolveDns}" Margin="0,0,0,5" />
+                        <CheckBox x:Name="ConfirmBlockAllCheckBox" Content="{DynamicResource Settings.ConfirmBlockAll}" Margin="0,0,0,5" />
+                        <CheckBox x:Name="RemoveMissingOnStartupCheckBox" Content="{DynamicResource Settings.RemoveMissing}" />
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="{DynamicResource Settings.Backend.Group}" Padding="10" Margin="0,0,0,10">
+                    <StackPanel>
+                        <RadioButton x:Name="CompatibilityBackendRadio"
+                                     Content="{DynamicResource Settings.Backend.Compatibility}"
+                                     GroupName="FirewallBackend"
+                                     Margin="0,0,0,5" />
+                        <RadioButton x:Name="WfpBackendRadio"
+                                     Content="{DynamicResource Settings.Backend.Wfp}"
+                                     GroupName="FirewallBackend"
+                                     Margin="0,0,0,5" />
+                        <TextBlock Text="{DynamicResource Settings.Backend.Info}"
+                                   TextWrapping="Wrap"
+                                   Foreground="DarkOrange"
+                                   FontSize="10.5"
+                                   Margin="20,0,0,0" />
+                        <CheckBox x:Name="ImmediateQuarantineOnForgetCheckBox"
+                                  Content="{DynamicResource Settings.TrueDelete}"
+                                  Margin="20,9,0,4" />
+                        <TextBlock Text="{DynamicResource Settings.TrueDelete.Info}"
+                                   TextWrapping="Wrap"
+                                   Foreground="{StaticResource MutedTextBrush}"
+                                   FontSize="10.5"
+                                   Margin="40,0,0,0" />
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="{DynamicResource Settings.Trusted.Group}" Padding="10" Margin="0,0,0,10">
+                    <StackPanel>
+                        <CheckBox x:Name="TrustVerifiedSystemProcessesCheckBox"
+                                  Content="{DynamicResource Settings.Trusted.Enable}"
+                                  Margin="0,0,0,5" />
+                        <TextBlock Text="{DynamicResource Settings.Trusted.Info}"
+                                   TextWrapping="Wrap"
+                                   Foreground="{StaticResource MutedTextBrush}"
+                                   FontSize="10.5"
+                                   Margin="20,0,0,0" />
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="{DynamicResource Settings.Portable.Group}" Padding="10" Margin="0,0,0,10">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,10">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Settings.DataFolder}" FontWeight="SemiBold" FontSize="11" />
+                                <TextBlock x:Name="DataPathText" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" FontSize="10.5" Margin="0,3,10,0" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Content="{DynamicResource Settings.Open}" Style="{StaticResource SystemButton}" Click="OpenDataFolder_Click" />
+                        </Grid>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                                <ColumnDefinition Width="8" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Settings.ExportImport}" FontWeight="SemiBold" FontSize="11" />
+                                <TextBlock Text="{DynamicResource Settings.ExportImport.Info}" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" FontSize="10.5" Margin="0,2,12,0" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Content="{DynamicResource Settings.Export}" Style="{StaticResource SystemButton}" MinWidth="78" Click="ExportConfiguration_Click" />
+                            <Button Grid.Column="3" Content="{DynamicResource Settings.Import}" Style="{StaticResource SystemButton}" MinWidth="78" Click="ImportConfiguration_Click" />
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="{DynamicResource Settings.Diagnostics.Group}" Padding="10" Margin="0,0,0,10">
+                    <StackPanel>
+                        <TextBlock x:Name="DiagnosticsText" TextWrapping="Wrap" FontSize="10.5" Foreground="{StaticResource MutedTextBrush}" />
+                        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right" Margin="0,8,0,0">
+                            <Button Content="{DynamicResource Settings.OpenLog}" Style="{StaticResource SystemButton}" Margin="0,0,8,0" Click="OpenLogs_Click" />
+                            <Button Content="{DynamicResource Settings.Refresh}" Style="{StaticResource SystemButton}" Click="RefreshDiagnostics_Click" />
+                        </StackPanel>
+                    </StackPanel>
+                </GroupBox>
+
+                <GroupBox Header="{DynamicResource Settings.Maintenance.Group}" Padding="10">
+                    <StackPanel>
+                        <Grid Margin="0,0,0,8">
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Settings.Rebuild.Title}" FontWeight="SemiBold" FontSize="11" />
+                                <TextBlock Text="{DynamicResource Settings.Rebuild.Info}" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" FontSize="10.5" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Content="{DynamicResource Settings.Rebuild.Button}" Style="{StaticResource SystemButton}" Margin="10,0,0,0" Click="RebuildRules_Click" />
+                        </Grid>
+
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <StackPanel>
+                                <TextBlock Text="{DynamicResource Settings.RemoveRules.Title}" FontWeight="SemiBold" FontSize="11" />
+                                <TextBlock Text="{DynamicResource Settings.RemoveRules.Info}" TextWrapping="Wrap" Foreground="{StaticResource MutedTextBrush}" FontSize="10.5" />
+                            </StackPanel>
+                            <Button Grid.Column="1" Content="{DynamicResource Settings.RemoveRules.Button}" Style="{StaticResource SystemDangerButton}" Margin="10,0,0,0" Click="RemoveRules_Click" />
+                        </Grid>
+                    </StackPanel>
+                </GroupBox>
+            </StackPanel>
+        </ScrollViewer>
+
+        <Grid Grid.Row="4">
+            <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*" />
+                <ColumnDefinition Width="Auto" />
+                <ColumnDefinition Width="8" />
+                <ColumnDefinition Width="Auto" />
+            </Grid.ColumnDefinitions>
+            <TextBlock x:Name="SettingsStatusText" VerticalAlignment="Center" Foreground="{StaticResource MutedTextBrush}" FontSize="10.5" TextTrimming="CharacterEllipsis" />
+            <Button Grid.Column="1" Content="{DynamicResource Common.Cancel}" Width="86" Style="{StaticResource SystemButton}" IsCancel="True" />
+            <Button Grid.Column="3" Content="{DynamicResource Common.Save}" Width="94" Style="{StaticResource SystemAccentButton}" IsDefault="True" Click="Save_Click" />
+        </Grid>
+    </Grid>
+</Window>

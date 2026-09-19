@@ -1,0 +1,140 @@
+<ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+                    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.WindowTitle">GeniaFirewall 0.7.3 Stable</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.ModeLabel">Mode</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Mode.Normal">Normal</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Mode.BlockAll">Block all</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Mode.AllowAll">Allow all</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Mode.Monitor">Monitor</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.SearchTooltip">Search by name or path</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.SearchWatermark">Search...</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Clear">Clear</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Add">+ Add</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Settings">Settings</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.ProtectionOn">Protection ON</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.ProtectionOff">Protection OFF</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.SortTooltip">Click to sort</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.Allow">Allow</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.Block">Block</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.Ask">Ask</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.ShowPrompt">Show prompt now</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.MutePrompt">Do not remind me about this app</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.Properties">Properties</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.OpenLocation">Open file location</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.ResetStats">Reset statistics</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.Remove">Remove from list</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.RemoveMissing">Remove missing</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.Refresh">Refresh</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.QuickRules">Quick rule</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.EnableAll">EnableAll · allow all</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.EnableAllHint">Allow new inbound and outbound TCP/UDP IPv4/IPv6 connections for this application.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.DisableAll">DisableAll · block all</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.OutgoingOnly">Outgoing only</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.OutgoingOnlyHint">Allow outbound TCP/UDP IPv4/IPv6 connections for this application.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.IncomingOnly">Incoming only</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.IncomingOnlyHint">Allow new inbound TCP/UDP IPv4/IPv6 connections and block new outbound connections for this application.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.QuickAsk">Ask again</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.Temporary">Temporary access</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.TempTenMinutes">Allow for 10 minutes</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.TempUntilExit">Allow until application exits</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Column.Program">Application</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Column.Status">Status</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Column.Trust">Trust</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Column.Protocol">Protocol</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Column.Activity">Activity</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Column.Connection">Last connection</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Empty.Title">Application list is empty</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Empty.Subtitle">In Normal mode, new network applications will appear automatically.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Ready">Ready</sys:String>
+
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.Changed">Changed</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.AutoAllowed">Auto-allowed</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.Allow">Allowed</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.Block">Blocked</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.Ask">Pending decision</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.EnableAll">Enable all</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.OutgoingOnly">Outgoing only</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.IncomingOnly">Incoming only</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.DisableAll">Disable all</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="RuleProfile.None">Regular rule</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Temp.UntilExit">Until exit</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Temp.TenMinutes">Temporary · 10 min</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Trust.System">🛡 System</sys:String>
+
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Title">GeniaFirewall — network access</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.ChangedTitle">GeniaFirewall — application changed</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Subtitle">A new application is using the network</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.ChangedSubtitle">The executable changed — the old permission is temporarily ignored</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Publisher">Publisher</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Signature">Signature</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Process">Process</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Parent">Parent</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.CommandLine">Command line</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Network">Network</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.File">File</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Question">How should this application be handled?</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Info1">GeniaFirewall 0.7.3 Stable groups simultaneous destinations from one EXE into a single prompt. Reverse DNS may be shown for TCP, but the rule still applies to the application, not the host name.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Info2">In WFP Normal mode, the application stays quarantined while a decision is pending. Later and closing this window keep network access blocked.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.DontRemind">Do not remind me about this application</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Later">Later</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Block">Block</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Allow">Allow</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Scope.Always">Always</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Scope.TenMinutes">For 10 minutes</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Scope.UntilExit">Until application exits</sys:String>
+
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Title">Settings — GeniaFirewall</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Header">Settings</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Version">0.7.3 Stable · WFP/TUN verified</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Language.Group">Language</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Language.Auto">Automatic (Windows language)</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Language.Russian">Русский</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Language.English">English</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Start.Group">Startup and notifications</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.StartWindows">Start GeniaFirewall when signing in to Windows</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.AutostartInfo">Autostart uses Windows Task Scheduler with highest privileges. The current portable EXE SHA-256 is checked before launch.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Check">Check</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Sound">Play a sound when a new application asks for access</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Tray">Show service notifications in the tray</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.ResolveDns">Show host names for TCP (reverse DNS)</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.ConfirmBlockAll">Confirm when enabling Block all mode</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.RemoveMissing">Remove missing applications at startup</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Backend.Group">Firewall backend</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Backend.Compatibility">Windows Firewall Compatibility</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Backend.Wfp">GeniaFirewall WFP — standalone inbound/outbound backend</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Backend.Info">The WFP backend applies rules directly through GeniaFirewall.Service at ALE_AUTH_CONNECT and ALE_AUTH_RECV_ACCEPT for IPv4/IPv6 TCP/UDP. In Normal mode unsolicited inbound traffic is blocked by default; EnableAll and IncomingOnly can permit inbound connections. True kernel pre-connect Ask remains the next major stage.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.TrueDelete">Safe Del: hidden WFP quarantine after removing a row</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.TrueDelete.Info">In Normal + GeniaFirewall WFP, the row really disappears, while the Service keeps a hidden ASK-BLOCK for that EXE. On the next network activity the application reappears as Pending decision.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Trusted.Group">Trusted system processes</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Trusted.Enable">Automatically allow strictly verified Windows system processes</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Trusted.Info">Only a small built-in set is auto-allowed after checking the system path and a trusted Microsoft Authenticode signature. svchost.exe also requires service identity validation.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Portable.Group">Portable data</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.DataFolder">Data folder</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Open">Open</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.ExportImport">Export / import configuration</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.ExportImport.Info">Rules, SHA-256 values and behavioral settings are stored in JSON. Backend, autostart and window placement are not transferred.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Export">Export</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Import">Import</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Diagnostics.Group">Diagnostics</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.OpenLog">Open log</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Refresh">Refresh</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Maintenance.Group">Maintenance</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Rebuild.Title">Rebuild rules</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Rebuild.Info">Removes only GeniaFirewall rules and rebuilds them from the current database.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Rebuild.Button">Rebuild</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.RemoveRules.Title">Emergency rule removal</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.RemoveRules.Info">Removes rules from the active GeniaFirewall backend and turns off protection. Microsoft Defender Firewall system rules are not touched.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.RemoveRules.Button">Remove rules</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Common.Cancel">Cancel</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Common.Save">Save</sys:String>
+
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Tray.Open">Open GeniaFirewall</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Tray.Mode">Mode</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Tray.ProtectionOn">Protection: ON</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Tray.ProtectionOff">Protection: OFF</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Tray.TrustSystem">Trust verified Windows system components</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Tray.Settings">Settings...</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Tray.Exit">Exit</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Tray.Running">GeniaFirewall continues running in the tray.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Tray.Detected">New application detected</sys:String>
+</ResourceDictionary>

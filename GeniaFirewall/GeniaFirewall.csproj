@@ -1,0 +1,48 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <UseWindowsForms>true</UseWindowsForms>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <LangVersion>latest</LangVersion>
+    <ApplicationManifest>app.manifest</ApplicationManifest>
+    <ApplicationIcon>Assets\geniafirewall.ico</ApplicationIcon>
+    <AssemblyName>GeniaFirewall</AssemblyName>
+    <RootNamespace>GeniaFirewall</RootNamespace>
+    <Version>0.7.3.4</Version>
+    <AssemblyVersion>0.7.3.4</AssemblyVersion>
+    <FileVersion>0.7.3.4</FileVersion>
+    <Authors>GeniaFirewall</Authors>
+    <Product>GeniaFirewall</Product>
+    <Description>Tray-first application firewall for Windows with standalone inbound/outbound WFP enforcement.</Description>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Resource Include="Assets\geniafirewall.png" />
+    <Resource Include="Assets\geniafirewall.ico" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\GeniaFirewall.Protocol\GeniaFirewall.Protocol.csproj" />
+  </ItemGroup>
+
+
+  <ItemGroup>
+    <None Include="..\README_RU.md" Link="README_RU.md" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\ARCHITECTURE_0.7.3-STABLE_RU.md" Link="ARCHITECTURE_0.7.3-STABLE_RU.md" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\CHANGES_0.7.3-STABLE_RU.md" Link="CHANGES_0.7.3-STABLE_RU.md" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\SECURITY_AUDIT_0.7.3-STABLE_RU.md" Link="SECURITY_AUDIT_0.7.3-STABLE_RU.md" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\RELEASE_CHECKLIST_0.7.3-STABLE_RU.md" Link="RELEASE_CHECKLIST_0.7.3-STABLE_RU.md" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\WORK_TEST_PLAN_RU.md" Link="WORK_TEST_PLAN_RU.md" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\portable-cleanup.cmd" Link="portable-cleanup.cmd" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\install-service.cmd" Link="install-service.cmd" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\uninstall-service.cmd" Link="uninstall-service.cmd" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\service-console.cmd" Link="service-console.cmd" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\emergency-stop-wfp.cmd" Link="emergency-stop-wfp.cmd" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\tools\Check-GeniaFirewall.ps1" Link="tools\Check-GeniaFirewall.ps1" CopyToPublishDirectory="PreserveNewest" />
+    <None Include="..\tools\Remove-GeniaFirewallRules.ps1" Link="tools\Remove-GeniaFirewallRules.ps1" CopyToPublishDirectory="PreserveNewest" />
+  </ItemGroup>
+</Project>
