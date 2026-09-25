@@ -15,7 +15,11 @@ public partial class SettingsWindow : Window
     private readonly Func<string, Task> _exportConfigurationAction;
     private readonly Func<string, Task<AppSettings>> _importConfigurationAction;
     private readonly Func<string> _diagnosticsProvider;
+    private readonly Func<ServiceLifecycleStatus> _serviceStatusProvider;
+    private readonly Func<Task<ServiceLifecycleStatus>> _activateServiceAction;
+    private readonly Func<Task<ServiceLifecycleStatus>> _deactivateServiceAction;
     private AppSettings _original;
+    private bool _serviceEnabled;
 
     public AppSettings ResultSettings { get; private set; }
     private static bool IsRussian => LocalizationService.EffectiveLanguage == UiLanguage.Russian;
@@ -28,7 +32,10 @@ public partial class SettingsWindow : Window
         Func<Task> removeRulesAction,
         Func<string, Task> exportConfigurationAction,
         Func<string, Task<AppSettings>> importConfigurationAction,
-        Func<string> diagnosticsProvider)
+        Func<string> diagnosticsProvider,
+        Func<ServiceLifecycleStatus> serviceStatusProvider,
+        Func<Task<ServiceLifecycleStatus>> activateServiceAction,
+        Func<Task<ServiceLifecycleStatus>> deactivateServiceAction)
     {
         InitializeComponent();
 
@@ -39,12 +46,16 @@ public partial class SettingsWindow : Window
         _exportConfigurationAction = exportConfigurationAction;
         _importConfigurationAction = importConfigurationAction;
         _diagnosticsProvider = diagnosticsProvider;
+        _serviceStatusProvider = serviceStatusProvider;
+        _activateServiceAction = activateServiceAction;
+        _deactivateServiceAction = deactivateServiceAction;
         _original = CloneSettings(settings);
         ResultSettings = CloneSettings(settings);
 
         ApplySettingsToControls(settings);
         DataPathText.Text = _store.DataDirectory;
         RefreshAutostartStatus();
+        RefreshServiceStatus();
         RefreshDiagnostics();
 
         if (_autostart.IsEnabled() && !_autostart.IsConfiguredForCurrentExecutable())
@@ -59,6 +70,7 @@ public partial class SettingsWindow : Window
         ResolveHostNamesCheckBox.IsChecked = settings.ResolveHostNames;
         CompatibilityBackendRadio.IsChecked = settings.BackendMode == FirewallBackendMode.WindowsFirewallCompatibility;
         WfpBackendRadio.IsChecked = settings.BackendMode == FirewallBackendMode.GeniaFirewallWfp;
+        _serviceEnabled = settings.ServiceEnabled;
         ImmediateQuarantineOnForgetCheckBox.IsChecked = settings.ImmediateQuarantineOnForget;
         SelectLanguage(settings.UiLanguage);
         ConfirmBlockAllCheckBox.IsChecked = settings.ConfirmBlockAll;
@@ -134,6 +146,11 @@ public partial class SettingsWindow : Window
             ResultSettings.BackendMode = WfpBackendRadio.IsChecked == true
                 ? FirewallBackendMode.GeniaFirewallWfp
                 : FirewallBackendMode.WindowsFirewallCompatibility;
+            if (ResultSettings.BackendMode == FirewallBackendMode.GeniaFirewallWfp && !_serviceEnabled)
+                throw new InvalidOperationException(IsRussian
+                    ? "Сначала активируйте системную службу GeniaFirewall."
+                    : "Activate the GeniaFirewall system service first.");
+            ResultSettings.ServiceEnabled = _serviceEnabled;
             ResultSettings.ImmediateQuarantineOnForget = ImmediateQuarantineOnForgetCheckBox.IsChecked == true;
             ResultSettings.UiLanguage = GetSelectedLanguage();
             ResultSettings.ConfirmBlockAll = ConfirmBlockAllCheckBox.IsChecked == true;
@@ -146,7 +163,7 @@ public partial class SettingsWindow : Window
         {
             System.Windows.MessageBox.Show(
                 this,
-                IsRussian ? $"Не удалось сохранить настройки автозагрузки.\n\n{ex.Message}" : $"Failed to save autostart settings.\n\n{ex.Message}",
+                IsRussian ? $"Не удалось сохранить настройки.\n\n{ex.Message}" : $"Failed to save settings.\n\n{ex.Message}",
                 "GeniaFirewall",
                 MessageBoxButton.OK,
                 MessageBoxImage.Error);
@@ -239,6 +256,7 @@ public partial class SettingsWindow : Window
             ApplySettingsToControls(importedSettings);
             SettingsStatusText.Text = IsRussian ? "Конфигурация импортирована и применена." : "Configuration imported and applied.";
             RefreshAutostartStatus();
+            RefreshServiceStatus();
             RefreshDiagnostics();
         }
         catch (Exception ex)
@@ -289,6 +307,133 @@ public partial class SettingsWindow : Window
         }
     }
 
+    private async void ActivateService_Click(object sender, RoutedEventArgs e)
+    {
+        SetServiceButtonsEnabled(false);
+        try
+        {
+            var status = await _activateServiceAction();
+            _serviceEnabled = true;
+            ApplyServiceStatus(status);
+            SettingsStatusText.Text = IsRussian
+                ? "Служба установлена, защищена и запущена."
+                : "The service is installed, protected, and running.";
+            RefreshDiagnostics();
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(
+                this,
+                IsRussian ? $"Не удалось активировать службу.\n\n{ex.Message}" : $"Failed to activate the service.\n\n{ex.Message}",
+                "GeniaFirewall",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            RefreshServiceStatus();
+        }
+        finally
+        {
+            SetServiceButtonsEnabled(true);
+        }
+    }
+
+    private async void DeactivateService_Click(object sender, RoutedEventArgs e)
+    {
+        var confirmation = System.Windows.MessageBox.Show(
+            this,
+            IsRussian
+                ? "Деактивировать и удалить системную службу GeniaFirewall?\n\nWFP-политика будет проверенно очищена, backend переключится на Windows Firewall Compatibility. Portable-данные и правила приложений сохранятся."
+                : "Deactivate and remove the GeniaFirewall system service?\n\nThe WFP policy will be cleared and verified, and the backend will switch to Windows Firewall Compatibility. Portable data and application rules will be preserved.",
+            "GeniaFirewall",
+            MessageBoxButton.YesNo,
+            MessageBoxImage.Warning);
+
+        if (confirmation != MessageBoxResult.Yes)
+            return;
+
+        SetServiceButtonsEnabled(false);
+        try
+        {
+            var status = await _deactivateServiceAction();
+            _serviceEnabled = false;
+            CompatibilityBackendRadio.IsChecked = true;
+            WfpBackendRadio.IsChecked = false;
+            ApplyServiceStatus(status);
+            SettingsStatusText.Text = IsRussian
+                ? "Служба деактивирована и удалена; активен Compatibility backend."
+                : "The service was deactivated and removed; the Compatibility backend is active.";
+            RefreshDiagnostics();
+        }
+        catch (Exception ex)
+        {
+            System.Windows.MessageBox.Show(
+                this,
+                IsRussian ? $"Не удалось полностью деактивировать службу.\n\n{ex.Message}" : $"Failed to fully deactivate the service.\n\n{ex.Message}",
+                "GeniaFirewall",
+                MessageBoxButton.OK,
+                MessageBoxImage.Error);
+            RefreshServiceStatus();
+        }
+        finally
+        {
+            SetServiceButtonsEnabled(true);
+        }
+    }
+
+    private void RefreshServiceStatus()
+    {
+        try
+        {
+            ApplyServiceStatus(_serviceStatusProvider());
+        }
+        catch (Exception ex)
+        {
+            ServiceStatusText.Text = IsRussian
+                ? $"Не удалось проверить службу: {ex.Message}"
+                : $"Failed to inspect the service: {ex.Message}";
+            ActivateServiceButton.IsEnabled = true;
+            DeactivateServiceButton.IsEnabled = _serviceEnabled;
+            WfpBackendRadio.IsEnabled = false;
+        }
+    }
+
+    private void ApplyServiceStatus(ServiceLifecycleStatus status)
+    {
+        var ready = status.Installed && status.Running && status.BinaryPresent &&
+                    status.ConfigurationValid && status.StorageProtected;
+        ServiceStatusText.Text = IsRussian
+            ? ready
+                ? $"Активна · путь и ACL проверены · {status.BinaryPath}"
+                : status.Installed
+                    ? $"Требует внимания · {status.Description}"
+                    : "Деактивирована · служба и защищённый EXE отсутствуют"
+            : ready
+                ? $"Active · path and ACL verified · {status.BinaryPath}"
+                : status.Installed
+                    ? $"Needs attention · {status.Description}"
+                    : "Deactivated · service and protected EXE are absent";
+
+        ActivateServiceButton.IsEnabled = !ready;
+        DeactivateServiceButton.IsEnabled = status.Installed || status.BinaryPresent || _serviceEnabled;
+        WfpBackendRadio.IsEnabled = ready && _serviceEnabled;
+        if (!WfpBackendRadio.IsEnabled && WfpBackendRadio.IsChecked == true)
+        {
+            WfpBackendRadio.IsChecked = false;
+            CompatibilityBackendRadio.IsChecked = true;
+        }
+    }
+
+    private void SetServiceButtonsEnabled(bool enabled)
+    {
+        if (!enabled)
+        {
+            ActivateServiceButton.IsEnabled = false;
+            DeactivateServiceButton.IsEnabled = false;
+            return;
+        }
+
+        RefreshServiceStatus();
+    }
+
     private static void OpenFolder(string path)
     {
         Process.Start(new ProcessStartInfo
@@ -316,6 +461,7 @@ public partial class SettingsWindow : Window
             ExePath = item.ExePath,
             DisplayName = item.DisplayName
         }).ToList(),
+        ServiceEnabled = source.ServiceEnabled,
         ConfirmBlockAll = source.ConfirmBlockAll,
         RemoveMissingOnStartup = source.RemoveMissingOnStartup,
         TrustVerifiedSystemProcesses = source.TrustVerifiedSystemProcesses,

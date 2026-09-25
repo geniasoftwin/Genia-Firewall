@@ -1,22 +1,18 @@
-GeniaFirewall 0.7.3 Stable / 0.7.3.4
-IPC v13 / GeniaFirewall.Service.v13
+GeniaFirewall 0.7.4 RC1 / 0.7.4.0
 
-Source Ready final release promoted from the Windows-accepted RC1.
-Static checks are performed in the source preparation environment.
-IMPORTANT: Windows/.NET Desktop SDK is not available here, therefore dotnet publish and real WFP runtime tests must be executed on Windows.
+Статус ветки:
+- реализован Single-EXE Portable;
+- Service встраивается в UI и автоматически устанавливается в защищённый Program Files path;
+- активация/деактивация Service добавлена в настройки;
+- Program Files, ProgramData и SCM ACL hardening добавлен;
+- publish требует ровно один пользовательский EXE;
+- Windows CI собирает пакет и публикует временный test artifact;
+- ручной Windows 10/11 smoke-test ещё обязателен до Stable.
 
-RC1 acceptance completed on Windows:
-- repeated Protection/backend switching without 0x80320033
-- revision 5 -> 22 without filter accumulation
-- WFP lifecycle cleanup-verified=yes, residual=0
-- filter geometry stayed at 68 (outbound=60, inbound=8)
-- GeniaProxy/TUN works with protection enabled
+Release gate:
+- Windows CI обязан завершить build, single-EXE publish и artifact upload без warnings/errors;
+- CodeQL обязан завершиться успешно; актуальный результат смотрите в checks текущего PR;
+- clean install / update 0.7.3 / deactivate / reactivate / reboot / TUN требуют ручного Windows smoke-test;
+- Authenticode: отсутствует.
 
-Final Stable smoke gate on Windows:
-- published UI and Service file versions are 0.7.3.4
-- service 0.7.3.4 / IPC OK
-- dynamic WFP session
-- WFP lifecycle cleanup-verified=yes, residual=0
-- weight-plan=PROBE>APP>GLOBAL
-- IPv4 telemetry renders 127.0.0.1, not 1.0.0.127
-- startup not-found provider/sublayer results are labelled (ok)
+Не создавать tag/release Stable до полного RELEASE_CHECKLIST_0.7.4-RC1_RU.md.

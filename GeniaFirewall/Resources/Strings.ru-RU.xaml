@@ -1,6 +1,6 @@
 <ResourceDictionary xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
                     xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
-    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.WindowTitle">GeniaFirewall 0.7.3 Stable</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.WindowTitle">GeniaFirewall 0.7.4 RC1</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.ModeLabel">Режим</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Mode.Normal">Нормальный</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Mode.BlockAll">Блокировать всё</sys:String>
@@ -73,7 +73,7 @@
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Network">Сеть</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.File">Файл</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Question">Как поступать с этим приложением?</sys:String>
-    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Info1">GeniaFirewall 0.7.3 Stable объединяет одновременные назначения одного EXE в один запрос. Для TCP по возможности показывается reverse-DNS имя, но правило применяется к приложению, а не к имени узла.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Info1">GeniaFirewall 0.7.4 RC1 объединяет одновременные назначения одного EXE в один запрос. Для TCP по возможности показывается reverse-DNS имя, но правило применяется к приложению, а не к имени узла.</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Info2">В WFP Normal приложение находится в карантине, пока ожидается решение. «Позже» и закрытие окна оставляют сеть заблокированной.</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.DontRemind">Не напоминать об этом приложении</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Prompt.Later">Позже</sys:String>
@@ -85,7 +85,7 @@
 
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Title">Настройки — GeniaFirewall</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Header">Настройки</sys:String>
-    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Version">0.7.3 Stable · WFP/TUN проверено</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Version">0.7.4 RC1 · Single-EXE Portable</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Language.Group">Язык / Language</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Language.Auto">Автоматически (язык Windows)</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Language.Russian">Русский</sys:String>
@@ -105,6 +105,10 @@
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Backend.Info">WFP backend применяет правила напрямую через GeniaFirewall.Service на ALE_AUTH_CONNECT и ALE_AUTH_RECV_ACCEPT IPv4/IPv6 для TCP/UDP. В Normal неизвестный входящий трафик блокируется по умолчанию; EnableAll и IncomingOnly могут разрешать входящие соединения. Настоящий kernel pre-connect Ask остаётся следующим крупным этапом.</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.TrueDelete">Безопасный Del: скрытый WFP-карантин после удаления записи</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.TrueDelete.Info">В Normal + GeniaFirewall WFP запись действительно исчезает из списка, но Service сохраняет скрытый ASK-BLOCK для этого EXE. При следующей сетевой активности приложение появляется заново как «Ожидает решения».</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Service.Group">Системная служба WFP</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Service.Info">Служба извлекается из portable EXE только в защищённую папку Program Files. Запись разрешена лишь SYSTEM и администраторам. Деактивация сначала проверенно очищает WFP-политику и переключает backend на Compatibility.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Service.Activate">Активировать</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Service.Deactivate">Деактивировать</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Trusted.Group">Доверенные системные процессы</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Trusted.Enable">Автоматически разрешать строго проверенные системные процессы Windows</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Trusted.Info">Без запроса разрешаются только процессы из встроенного минимального списка после проверки системного пути и доверенной Authenticode-подписи Microsoft. Для svchost.exe дополнительно проверяются службы текущего PID.</sys:String>
@@ -112,7 +116,7 @@
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.DataFolder">Папка данных</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Open">Открыть</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.ExportImport">Экспорт / импорт конфигурации</sys:String>
-    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.ExportImport.Info">Правила, SHA-256 и поведенческие настройки сохраняются в JSON. Backend, автозагрузка и положение окна не переносятся.</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.ExportImport.Info">Правила, SHA-256 и поведенческие настройки сохраняются в JSON. Backend, состояние службы, автозагрузка и положение окна не переносятся.</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Export">Экспорт</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Import">Импорт</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Diagnostics.Group">Диагностика</sys:String>

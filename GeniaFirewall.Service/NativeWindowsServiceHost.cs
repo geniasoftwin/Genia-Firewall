@@ -43,7 +43,7 @@ internal static class NativeWindowsServiceHost
         if (error == ErrorFailedServiceControllerConnect)
         {
             Console.Error.WriteLine("GeniaFirewall.Service is not running under the Windows Service Control Manager.");
-            Console.Error.WriteLine("Use --console for a manual elevated test, or install-service.cmd to register the service.");
+            Console.Error.WriteLine("Use --console for a manual elevated test. The portable UI registers the embedded service automatically.");
             return error;
         }
 
