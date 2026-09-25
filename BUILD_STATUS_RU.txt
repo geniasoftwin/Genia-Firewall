@@ -10,9 +10,9 @@ GeniaFirewall 0.7.4 RC1 / 0.7.4.0
 - ручной Windows 10/11 smoke-test ещё обязателен до Stable.
 
 Release gate:
-- CI build/publish: ожидается для текущего commit;
-- CodeQL: ожидается для текущего PR;
-- clean install / update 0.7.3 / deactivate / reactivate / reboot / TUN: не выполнено;
+- Windows CI обязан завершить build, single-EXE publish и artifact upload без warnings/errors;
+- CodeQL обязан завершиться успешно; актуальный результат смотрите в checks текущего PR;
+- clean install / update 0.7.3 / deactivate / reactivate / reboot / TUN требуют ручного Windows smoke-test;
 - Authenticode: отсутствует.
 
 Не создавать tag/release Stable до полного RELEASE_CHECKLIST_0.7.4-RC1_RU.md.
