@@ -19,11 +19,13 @@ internal static class ServiceLog
         {
             lock (Sync)
             {
-                Directory.CreateDirectory(LogDirectory);
+                ServiceStorageSecurity.EnsureProtectedDirectory(LogDirectory);
+                ServiceStorageSecurity.ProtectFile(CurrentLogPath);
                 File.AppendAllText(
                     CurrentLogPath,
                     $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss.fff}] {message}{Environment.NewLine}",
                     Encoding.UTF8);
+                ServiceStorageSecurity.ProtectFile(CurrentLogPath);
             }
         }
         catch

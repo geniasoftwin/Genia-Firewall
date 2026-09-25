@@ -1,34 +1,36 @@
-# GeniaFirewall 0.7.3 Stable
+# GeniaFirewall 0.7.4 RC1
 
 Лицензия: GPL-3.0-only. Полный текст — в `LICENSE`.
 
-Стабильная portable-сборка application firewall для Windows 10/11 на WPF/.NET 10 с самостоятельным WFP backend в `GeniaFirewall.Service`.
+Portable application firewall для Windows 10/11 на WPF/.NET 10 с самостоятельным WFP backend. Версия 0.7.4 RC1 проверяет новый жизненный цикл **Single-EXE Portable** перед выпуском Stable.
 
-## Стабильный релиз
+## Один пользовательский EXE
 
-Функциональный состав проверенного RC1 заморожен. Финальный релиз меняет только маркировку, версию и release-документацию; policy model и WFP-логика не изменены.
+Готовый архив содержит только:
 
-В Stable сохранены исправления HF1/HF2 и hardening RC1:
+```text
+GeniaFirewall.exe
+```
 
-- dynamic WFP session и проверяемое удаление runtime-фильтров;
-- startup cleanup stale/orphan objects;
-- app-level правила без привязки к interface index;
-- physical interface scope только для низкоприоритетного Normal inbound boundary;
-- узкие readiness permits GeniaProxy UDP `1.1.1.1:53` и `1.0.0.1:53`;
-- порядок весов `PROBE(15) > APP(14) > GLOBAL(1)`;
-- корректный `FWPM_FILTER_ENUM_TEMPLATE0.actionMask = 0xFFFFFFFF`;
-- принятие committed filter IDs до post-commit verification.
+`GeniaFirewall.Service.exe`, установочные CMD, документация и диагностические скрипты больше не раскладываются рядом с программой.
 
-Дополнительное hardening:
+При первом запуске с подтверждением UAC интерфейс:
 
-- IPv4 в WFP telemetry декодируется из network byte order, поэтому `127.0.0.1` больше не отображается как `1.0.0.127`;
-- `WFP last BLOCK` содержит UTC-время события и не выглядит как безусловно текущая блокировка;
-- ожидаемые результаты startup cleanup показываются как `not-found (ok)`, а не как тревожные необъяснённые HRESULT;
-- неполный клиент IPC освобождается по таймауту и не может бесконечно удерживать единственный цикл pipe server;
-- непривилегированный IPC status не раскрывает пути EXE, endpoint и внутренние ошибки;
-- publish проверяет версии готовых EXE, считает SHA-256 и завершает сборку ошибкой при сбое упаковки.
+1. читает Service из собственного встроенного ресурса;
+2. проверяет записанную копию по SHA-256;
+3. устанавливает её как LocalSystem-службу в `%ProgramFiles%\GeniaFirewall\Service`;
+4. закрывает ACL каталога, EXE и объекта SCM для `SYSTEM` и локальных администраторов;
+5. проверяет путь, запуск службы и IPC до применения WFP backend.
 
-## Portable build
+При следующих запусках встроенный Service и установленная копия сравниваются по SHA-256. Обновление выполняется только в защищённом каталоге и только при несовпадении.
+
+В `Настройки → Системная служба WFP` службу можно активировать или деактивировать. Безопасная деактивация сначала подтверждает нулевое состояние WFP, синхронизирует Windows Firewall Compatibility, затем останавливает и удаляет службу и защищённый Service EXE.
+
+После первого запуска рядом с EXE появится только папка `Data` — это переносимые пользовательские настройки, правила, резервные копии и журналы. Она нужна для сохранения настоящего portable-режима.
+
+## Сборка
+
+Запустить на Windows с .NET 10 SDK:
 
 ```cmd
 publish-portable.cmd
@@ -37,25 +39,34 @@ publish-portable.cmd
 Результат:
 
 ```text
-publish\GeniaFirewall-0.7.3-Stable-win-x64\
-publish\GeniaFirewall-0.7.3-Stable-Portable-win-x64.zip
-publish\GeniaFirewall-0.7.3-Stable-SHA256.txt
+publish\GeniaFirewall-0.7.4-RC1-win-x64\GeniaFirewall.exe
+publish\GeniaFirewall-0.7.4-RC1-SingleExe-Portable-win-x64.zip
+publish\GeniaFirewall-0.7.4-RC1-SHA256.txt
 ```
 
-Перед обновлением удалить старую службу через `uninstall-service.cmd`, затем установить новую из новой publish-папки через `install-service.cmd` от администратора. Установщик копирует привилегированный Service в `%ProgramFiles%\GeniaFirewall\Service` и ограничивает ACL только `SYSTEM` и локальными администраторами; UI остаётся portable.
+Скрипт завершится ошибкой, если версии UI/Service/Protocol расходятся, встроенный Service отсутствует, сборка дала больше одного пользовательского файла или упаковка/SHA-256 не завершились.
 
 ## Безопасность
 
-Не публикуйте сведения о предполагаемой уязвимости в обычном Issue. Используйте приватный канал GitHub Security Advisory. Поддерживаемая версия и порядок сообщения описаны в `SECURITY.md`.
+- путь SCM всегда полностью заключён в кавычки;
+- каталоги бинарника и состояния Service отклоняют reparse point;
+- `%ProgramData%\GeniaFirewall\Service` и журналы службы защищаются от записи обычными пользователями;
+- stale WFP policy очищается и проверяется перед работой в Compatibility;
+- при незавершённой активации Service останавливается, поэтому dynamic WFP session освобождается;
+- обычные правила Microsoft Defender Firewall не удаляются.
+
+RC не подписан Authenticode: перед публичным Stable желательна подпись UI и встроенного Service. SHA-256 защищает целостность извлечения, но не заменяет подтверждение издателя.
+
+Уязвимости следует сообщать приватно через GitHub Security Advisory; подробности — в `SECURITY.md`.
 
 ## Версии
 
 ```text
-UI / Service / Protocol: 0.7.3.4
+UI / Service / Protocol: 0.7.4.0
 IPC: v13
 Pipe: GeniaFirewall.Service.v13
 ```
 
 ## Ограничение
 
-Stable не реализует настоящий kernel pre-connect Ask. Для удержания первого connect до решения пользователя нужен WFP callout driver.
+Настоящий kernel pre-connect Ask пока не реализован. Для удержания первого connect до решения пользователя нужен WFP callout driver.

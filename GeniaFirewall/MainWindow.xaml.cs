@@ -23,6 +23,7 @@ public partial class MainWindow : Window
     private readonly WindowsFirewallBackend _windowsFirewall = new();
     private readonly WfpPlatformProbeService _wfpPlatform = new();
     private readonly GeniaFirewallServiceClient _serviceClient = new();
+    private readonly ServiceLifecycleManager _serviceLifecycle = new();
     private readonly WfpServiceBackend _wfpFirewall;
     private IFirewallBackend _firewall;
     private readonly AutostartService _autostart = new();
@@ -106,6 +107,8 @@ public partial class MainWindow : Window
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
+        string? serviceStartupNotice = null;
+        var settingsNeedSave = false;
         try
         {
             _store.ValidatePortableStorage();
@@ -116,10 +119,81 @@ public partial class MainWindow : Window
             LocalizationService.Configure(_settings.UiLanguage);
             _settings.StartWithWindows = _autostart.IsEnabled();
             if (!Enum.IsDefined(_settings.BackendMode))
+            {
                 _settings.BackendMode = FirewallBackendMode.WindowsFirewallCompatibility;
+                settingsNeedSave = true;
+            }
+
+            if (_settings.ServiceEnabled)
+            {
+                try
+                {
+                    var lifecycleStatus = await Task.Run(_serviceLifecycle.EnsureInstalledAndRunning);
+                    await WaitForServiceIpcReadyAsync(TimeSpan.FromSeconds(8));
+                    _diagnostics.Log($"Embedded service lifecycle ready: {lifecycleStatus.Description}; binary={lifecycleStatus.BinaryPath}");
+
+                    // Compatibility mode must never coexist with a stale persisted WFP policy.
+                    if (_settings.BackendMode == FirewallBackendMode.WindowsFirewallCompatibility)
+                        ClearWfpRuntimeOrThrow("single-EXE startup in Compatibility mode");
+                }
+                catch (Exception ex)
+                {
+                    _diagnostics.LogException("Embedded service installation/startup verification", ex);
+                    try
+                    {
+                        await Task.Run(_serviceLifecycle.DeactivateAndRemove);
+                    }
+                    catch (Exception cleanupError)
+                    {
+                        _diagnostics.LogException("Service cleanup after startup verification failure", cleanupError);
+                    }
+
+                    if (_settings.BackendMode == FirewallBackendMode.GeniaFirewallWfp)
+                    {
+                        _settings.BackendMode = FirewallBackendMode.WindowsFirewallCompatibility;
+                        settingsNeedSave = true;
+                    }
+
+                    serviceStartupNotice = L(
+                        $"Служба WFP не активирована; безопасно выбран Compatibility backend. {ex.Message}",
+                        $"The WFP service was not activated; the Compatibility backend was selected safely. {ex.Message}");
+                }
+            }
+            else
+            {
+                try
+                {
+                    var disabledStatus = _serviceLifecycle.GetStatus();
+                    if (disabledStatus.Installed || disabledStatus.BinaryPresent)
+                    {
+                        await Task.Run(_serviceLifecycle.DeactivateAndRemove);
+                        _diagnostics.Log("ServiceEnabled=false enforced at startup: stale SCM registration/binary removed.");
+                    }
+                }
+                catch (Exception ex)
+                {
+                    _diagnostics.LogException("Enforce disabled service state at startup", ex);
+                    serviceStartupNotice = L(
+                        $"Служба отмечена как деактивированная, но её остатки не удалось полностью удалить: {ex.Message}",
+                        $"The service is marked disabled, but its remnants could not be removed completely: {ex.Message}");
+                }
+
+                if (_settings.BackendMode == FirewallBackendMode.GeniaFirewallWfp)
+                {
+                    _settings.BackendMode = FirewallBackendMode.WindowsFirewallCompatibility;
+                    settingsNeedSave = true;
+                    serviceStartupNotice ??= L(
+                        "Служба деактивирована в настройках; выбран Compatibility backend.",
+                        "The service is disabled in Settings; the Compatibility backend was selected.");
+                }
+            }
+
             _firewall = GetBackend(_settings.BackendMode);
             if (!Enum.IsDefined(_settings.Mode))
+            {
                 _settings.Mode = FirewallMode.Normal;
+                settingsNeedSave = true;
+            }
 
             _protectionEnabled = _settings.ProtectionEnabled;
             _mode = _settings.Mode;
@@ -248,6 +322,9 @@ public partial class MainWindow : Window
             _activityPersistTimer.Start();
             _temporaryRuleTimer.Start();
 
+            if (settingsNeedSave)
+                await SaveSettingsSilentlyAsync();
+
             RefreshLocalization();
             UpdateProtectionUi();
             RefreshList();
@@ -257,6 +334,8 @@ public partial class MainWindow : Window
             var recoveryNotice = _store.ConsumeRecoveryNotice();
             if (applicationsDatabaseUnavailable)
                 SetStatus(L("База приложений повреждена и не восстановлена. Существующие firewall-правила сохранены; см. Data\\Logs и .corrupt.", "The application database is damaged and could not be recovered. Existing firewall rules were preserved; see Data\\Logs and .corrupt."));
+            else if (!string.IsNullOrWhiteSpace(serviceStartupNotice))
+                SetStatus(serviceStartupNotice);
             else if (!string.IsNullOrWhiteSpace(recoveryNotice))
                 SetStatus(recoveryNotice);
             else if (removedMissing > 0 || sanitizedEntries > 0 || changedExecutables > 0 || resetTemporaryRules > 0)
@@ -410,7 +489,10 @@ public partial class MainWindow : Window
                 removeRulesAction: DisableAndRemoveRulesAsync,
                 exportConfigurationAction: ExportConfigurationAsync,
                 importConfigurationAction: ImportConfigurationAsync,
-                diagnosticsProvider: BuildDiagnosticsText);
+                diagnosticsProvider: BuildDiagnosticsText,
+                serviceStatusProvider: _serviceLifecycle.GetStatus,
+                activateServiceAction: ActivateServiceAsync,
+                deactivateServiceAction: DeactivateServiceAsync);
 
             if (IsVisible)
                 window.Owner = this;
@@ -418,6 +500,11 @@ public partial class MainWindow : Window
             if (window.ShowDialog() != true)
                 return;
 
+            // Service buttons apply immediately while the modal dialog is open. Use the
+            // actual runtime backend as the handoff source when Save is clicked afterwards.
+            previousBackendMode = _settings.BackendMode;
+            previousSettings.BackendMode = _settings.BackendMode;
+            previousSettings.ServiceEnabled = _settings.ServiceEnabled;
             _settings = window.ResultSettings;
             _settings.RuntimeQuarantines ??= [];
             _settings.StartWithWindows = _autostart.IsEnabled();
@@ -425,6 +512,21 @@ public partial class MainWindow : Window
             _settings.Mode = _mode;
             LocalizationService.Configure(_settings.UiLanguage);
             RefreshLocalization();
+
+            if (_settings.BackendMode == FirewallBackendMode.GeniaFirewallWfp)
+            {
+                if (!_settings.ServiceEnabled)
+                    throw new InvalidOperationException(L(
+                        "Сначала активируйте системную службу GeniaFirewall.",
+                        "Activate the GeniaFirewall system service first."));
+
+                var lifecycleStatus = _serviceLifecycle.GetStatus();
+                if (!IsServiceReady(lifecycleStatus))
+                {
+                    await Task.Run(_serviceLifecycle.EnsureInstalledAndRunning);
+                    await WaitForServiceIpcReadyAsync(TimeSpan.FromSeconds(8));
+                }
+            }
 
             if (trustedSystemModeWasEnabled && !_settings.TrustVerifiedSystemProcesses)
             {
@@ -475,6 +577,135 @@ public partial class MainWindow : Window
             ShowError(L("Не удалось открыть или сохранить настройки.", "Failed to open or save settings."), ex);
         }
     }
+
+    private async Task<ServiceLifecycleStatus> ActivateServiceAsync()
+    {
+        try
+        {
+            var status = await Task.Run(_serviceLifecycle.EnsureInstalledAndRunning);
+            await WaitForServiceIpcReadyAsync(TimeSpan.FromSeconds(8));
+
+            // A previously persisted WFP policy must not become active merely because the
+            // service was re-enabled while Compatibility mode is selected.
+            if (_settings.BackendMode == FirewallBackendMode.WindowsFirewallCompatibility)
+            {
+                ClearWfpRuntimeOrThrow("service activation in Compatibility mode");
+                _windowsFirewall.SynchronizeState(
+                    GetPolicyApplications(FirewallBackendMode.WindowsFirewallCompatibility),
+                    _protectionEnabled,
+                    _mode);
+                _firewall = _windowsFirewall;
+            }
+
+            _settings.ServiceEnabled = true;
+            await SaveSettingsAsync();
+            _diagnostics.Log($"Embedded service activated: {status.Description}; binary={status.BinaryPath}");
+            return _serviceLifecycle.GetStatus();
+        }
+        catch
+        {
+            // Stopping the dynamic service session is the safest fallback if activation or
+            // stale-policy verification did not complete.
+            try { await Task.Run(_serviceLifecycle.DeactivateAndRemove); } catch { }
+            _settings.ServiceEnabled = false;
+            if (_settings.BackendMode == FirewallBackendMode.GeniaFirewallWfp)
+            {
+                _settings.BackendMode = FirewallBackendMode.WindowsFirewallCompatibility;
+                _firewall = _windowsFirewall;
+            }
+            await SaveSettingsSilentlyAsync();
+            throw;
+        }
+    }
+
+    private async Task<ServiceLifecycleStatus> DeactivateServiceAsync()
+    {
+        var previousBackend = _settings.BackendMode;
+        var lifecycleStatus = _serviceLifecycle.GetStatus();
+
+        // If any installation remnants exist, start the trusted embedded payload so it can
+        // atomically persist a disabled policy and prove that its WFP session is empty.
+        if (lifecycleStatus.Installed || lifecycleStatus.BinaryPresent)
+        {
+            await Task.Run(_serviceLifecycle.EnsureInstalledAndRunning);
+            await WaitForServiceIpcReadyAsync(TimeSpan.FromSeconds(8));
+            ClearWfpRuntimeOrThrow("service deactivation");
+        }
+        else
+        {
+            _diagnostics.Log("Service deactivation: SCM registration and protected binary are already absent; no dynamic service session can remain.");
+        }
+
+        try
+        {
+            _windowsFirewall.SynchronizeState(
+                GetPolicyApplications(FirewallBackendMode.WindowsFirewallCompatibility),
+                _protectionEnabled,
+                _mode);
+        }
+        catch
+        {
+            if (previousBackend == FirewallBackendMode.GeniaFirewallWfp &&
+                (lifecycleStatus.Installed || lifecycleStatus.BinaryPresent))
+            {
+                try
+                {
+                    _wfpFirewall.SynchronizeState(
+                        GetPolicyApplications(FirewallBackendMode.GeniaFirewallWfp),
+                        _protectionEnabled,
+                        _mode);
+                }
+                catch (Exception restoreError)
+                {
+                    _diagnostics.LogException("Restore WFP after service-deactivation handoff failure", restoreError);
+                }
+            }
+            throw;
+        }
+
+        _settings.BackendMode = FirewallBackendMode.WindowsFirewallCompatibility;
+        _firewall = _windowsFirewall;
+
+        try
+        {
+            var removed = await Task.Run(_serviceLifecycle.DeactivateAndRemove);
+            _settings.ServiceEnabled = false;
+            await SaveSettingsAsync();
+            _diagnostics.Log("Embedded service deactivated: WFP clear verified, Compatibility synchronized, SCM registration and protected binary removed.");
+            return removed;
+        }
+        catch
+        {
+            var current = _serviceLifecycle.GetStatus();
+            _settings.ServiceEnabled = current.Installed || current.BinaryPresent;
+            await SaveSettingsSilentlyAsync();
+            throw;
+        }
+    }
+
+    private async Task WaitForServiceIpcReadyAsync(TimeSpan timeout)
+    {
+        var deadline = DateTime.UtcNow + timeout;
+        string lastDescription = "no IPC response";
+        while (DateTime.UtcNow < deadline)
+        {
+            var probe = _serviceClient.Probe(500);
+            lastDescription = probe.Description;
+            if (probe.Reachable && probe.Status is { } status &&
+                string.Equals(status.ProtocolVersion, GeniaFirewall.Protocol.ServiceProtocol.ProtocolVersion, StringComparison.Ordinal))
+            {
+                return;
+            }
+
+            await Task.Delay(100);
+        }
+
+        throw new TimeoutException($"GeniaFirewall.Service IPC did not become ready: {lastDescription}");
+    }
+
+    private static bool IsServiceReady(ServiceLifecycleStatus status) =>
+        status.Installed && status.Running && status.BinaryPresent &&
+        status.ConfigurationValid && status.StorageProtected;
 
     private async Task ToggleTrustedSystemModeAsync()
     {
@@ -2978,6 +3209,21 @@ public partial class MainWindow : Window
 
         try
         {
+            var lifecycle = _serviceLifecycle.GetStatus();
+            lines.Add(ru
+                ? $"Жизненный цикл Service: разрешена={(_settings.ServiceEnabled ? yes : no)} · установлена={(lifecycle.Installed ? yes : no)} · запущена={(lifecycle.Running ? yes : no)} · путь={(lifecycle.ConfigurationValid ? "проверен" : "не проверен")} · ACL={(lifecycle.StorageProtected ? "защищён" : "не проверен")}"
+                : $"Service lifecycle: enabled={(_settings.ServiceEnabled ? yes : no)} · installed={(lifecycle.Installed ? yes : no)} · running={(lifecycle.Running ? yes : no)} · path={(lifecycle.ConfigurationValid ? "verified" : "unverified")} · ACL={(lifecycle.StorageProtected ? "protected" : "unverified")}");
+            lines.Add((ru ? "Service binary: " : "Service binary: ") + lifecycle.BinaryPath);
+        }
+        catch (Exception ex)
+        {
+            lines.Add(ru
+                ? $"Жизненный цикл Service: ошибка проверки — {ex.Message}"
+                : $"Service lifecycle: probe error — {ex.Message}");
+        }
+
+        try
+        {
             var serviceProbe = _serviceClient.Probe();
             if (!serviceProbe.Reachable || serviceProbe.Status is null)
             {
@@ -3112,6 +3358,7 @@ public partial class MainWindow : Window
             ExePath = item.ExePath,
             DisplayName = item.DisplayName
         }).ToList(),
+        ServiceEnabled = _settings.ServiceEnabled,
         ConfirmBlockAll = _settings.ConfirmBlockAll,
         RemoveMissingOnStartup = _settings.RemoveMissingOnStartup,
         TrustVerifiedSystemProcesses = _settings.TrustVerifiedSystemProcesses,

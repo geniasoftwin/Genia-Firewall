@@ -1,52 +1,42 @@
 @echo off
-setlocal
+setlocal EnableExtensions
 cd /d "%~dp0"
 
-set "OUT=.\publish\GeniaFirewall-0.7.3-Stable-win-x64"
-set "ZIP=.\publish\GeniaFirewall-0.7.3-Stable-Portable-win-x64.zip"
-set "SHA=.\publish\GeniaFirewall-0.7.3-Stable-SHA256.txt"
+set "VERSION=0.7.4.0"
+set "LABEL=0.7.4-RC1"
+set "OUT=.\publish\GeniaFirewall-%LABEL%-win-x64"
+set "SERVICE_STAGE=.\publish\.service-%LABEL%-win-x64"
+set "ZIP=.\publish\GeniaFirewall-%LABEL%-SingleExe-Portable-win-x64.zip"
+set "SHA=.\publish\GeniaFirewall-%LABEL%-SHA256.txt"
 set "UI_PROJECT=.\GeniaFirewall\GeniaFirewall.csproj"
 set "SERVICE_PROJECT=.\GeniaFirewall.Service\GeniaFirewall.Service.csproj"
 set "PROTOCOL_PROJECT=.\GeniaFirewall.Protocol\GeniaFirewall.Protocol.csproj"
 set "MANIFEST=.\GeniaFirewall\app.manifest"
 set "SERVICE_MANIFEST=.\GeniaFirewall.Service\app.manifest"
 
-echo Checking GeniaFirewall 0.7.3 Stable version metadata...
-findstr /L /C:"0.7.3.4" "%MANIFEST%" >nul || goto :version_error
-findstr /L /C:"0.7.3.4" "%SERVICE_MANIFEST%" >nul || goto :version_error
-findstr /L /C:"<Version>0.7.3.4</Version>" "%UI_PROJECT%" >nul || goto :version_error
-findstr /L /C:"<AssemblyVersion>0.7.3.4</AssemblyVersion>" "%UI_PROJECT%" >nul || goto :version_error
-findstr /L /C:"<FileVersion>0.7.3.4</FileVersion>" "%UI_PROJECT%" >nul || goto :version_error
-findstr /L /C:"<Version>0.7.3.4</Version>" "%SERVICE_PROJECT%" >nul || goto :version_error
-findstr /L /C:"<AssemblyVersion>0.7.3.4</AssemblyVersion>" "%SERVICE_PROJECT%" >nul || goto :version_error
-findstr /L /C:"<FileVersion>0.7.3.4</FileVersion>" "%SERVICE_PROJECT%" >nul || goto :version_error
-findstr /L /C:"<Version>0.7.3.4</Version>" "%PROTOCOL_PROJECT%" >nul || goto :version_error
+echo Checking GeniaFirewall %LABEL% version metadata...
+findstr /L /C:"%VERSION%" "%MANIFEST%" >nul || goto :version_error
+findstr /L /C:"%VERSION%" "%SERVICE_MANIFEST%" >nul || goto :version_error
+findstr /L /C:"<Version>%VERSION%</Version>" "%UI_PROJECT%" >nul || goto :version_error
+findstr /L /C:"<AssemblyVersion>%VERSION%</AssemblyVersion>" "%UI_PROJECT%" >nul || goto :version_error
+findstr /L /C:"<FileVersion>%VERSION%</FileVersion>" "%UI_PROJECT%" >nul || goto :version_error
+findstr /L /C:"<Version>%VERSION%</Version>" "%SERVICE_PROJECT%" >nul || goto :version_error
+findstr /L /C:"<AssemblyVersion>%VERSION%</AssemblyVersion>" "%SERVICE_PROJECT%" >nul || goto :version_error
+findstr /L /C:"<FileVersion>%VERSION%</FileVersion>" "%SERVICE_PROJECT%" >nul || goto :version_error
+findstr /L /C:"<Version>%VERSION%</Version>" "%PROTOCOL_PROJECT%" >nul || goto :version_error
 
 echo Cleaning stale bin/obj and old publish output...
 for %%D in (".\GeniaFirewall\bin" ".\GeniaFirewall\obj" ".\GeniaFirewall.Service\bin" ".\GeniaFirewall.Service\obj" ".\GeniaFirewall.Protocol\bin" ".\GeniaFirewall.Protocol\obj") do (
   if exist %%~D rmdir /s /q %%~D
 )
 if exist "%OUT%" rmdir /s /q "%OUT%"
+if exist "%SERVICE_STAGE%" rmdir /s /q "%SERVICE_STAGE%"
 if exist "%ZIP%" del /q "%ZIP%"
 if exist "%SHA%" del /q "%SHA%"
+if not exist ".\publish" mkdir ".\publish"
 
 echo.
-echo [1/2] Publishing GeniaFirewall UI 0.7.3 Stable Portable win-x64...
-dotnet publish "%UI_PROJECT%" ^
-  -c Release ^
-  -r win-x64 ^
-  --self-contained true ^
-  -p:PublishSingleFile=true ^
-  -p:IncludeNativeLibrariesForSelfExtract=true ^
-  -p:EnableCompressionInSingleFile=true ^
-  -p:PublishTrimmed=false ^
-  -p:DebugType=None ^
-  -p:DebugSymbols=false ^
-  -o "%OUT%"
-if errorlevel 1 goto :publish_error
-
-echo.
-echo [2/2] Publishing GeniaFirewall.Service 0.7.3 Stable win-x64...
+echo [1/2] Publishing the embedded GeniaFirewall.Service payload...
 dotnet publish "%SERVICE_PROJECT%" ^
   -c Release ^
   -r win-x64 ^
@@ -57,30 +47,40 @@ dotnet publish "%SERVICE_PROJECT%" ^
   -p:PublishTrimmed=false ^
   -p:DebugType=None ^
   -p:DebugSymbols=false ^
+  -o "%SERVICE_STAGE%"
+if errorlevel 1 goto :publish_error
+if not exist "%SERVICE_STAGE%\GeniaFirewall.Service.exe" goto :publish_error
+
+for %%F in ("%SERVICE_STAGE%\GeniaFirewall.Service.exe") do set "EMBEDDED_SERVICE=%%~fF"
+
+echo.
+echo [2/2] Publishing the single-EXE GeniaFirewall portable UI...
+dotnet publish "%UI_PROJECT%" ^
+  -c Release ^
+  -r win-x64 ^
+  --self-contained true ^
+  -p:PublishSingleFile=true ^
+  -p:IncludeNativeLibrariesForSelfExtract=true ^
+  -p:EnableCompressionInSingleFile=true ^
+  -p:PublishTrimmed=false ^
+  -p:DebugType=None ^
+  -p:DebugSymbols=false ^
+  "-p:EmbeddedServicePath=%EMBEDDED_SERVICE%" ^
+  -p:RequireEmbeddedService=true ^
   -o "%OUT%"
 if errorlevel 1 goto :publish_error
 
 if not exist "%OUT%\GeniaFirewall.exe" goto :publish_error
-if not exist "%OUT%\GeniaFirewall.Service.exe" goto :publish_error
 
-echo Verifying published file versions...
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$expected='0.7.3.4'; $files=@('%OUT%\GeniaFirewall.exe','%OUT%\GeniaFirewall.Service.exe'); foreach($file in $files){$actual=(Get-Item -LiteralPath $file).VersionInfo.FileVersion; if($actual -ne $expected){Write-Error ('Version mismatch: {0} is {1}, expected {2}' -f $file,$actual,$expected); exit 1}}"
-if errorlevel 1 goto :version_error
+echo Verifying published versions and one-file layout...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$expected='%VERSION%'; $files=@('%OUT%\GeniaFirewall.exe','%SERVICE_STAGE%\GeniaFirewall.Service.exe'); foreach($file in $files){$actual=(Get-Item -LiteralPath $file).VersionInfo.FileVersion; if($actual -ne $expected){Write-Error ('Version mismatch: {0} is {1}, expected {2}' -f $file,$actual,$expected); exit 1}}; $items=@(Get-ChildItem -LiteralPath '%OUT%' -Force); if($items.Count -ne 1 -or $items[0].Name -ne 'GeniaFirewall.exe'){Write-Error ('Portable output must contain exactly one file; found: ' + (($items | ForEach-Object Name) -join ', ')); exit 1}"
+if errorlevel 1 goto :layout_error
 
-copy /Y ".\install-service.cmd" "%OUT%\install-service.cmd" >nul
-copy /Y ".\uninstall-service.cmd" "%OUT%\uninstall-service.cmd" >nul
-copy /Y ".\service-console.cmd" "%OUT%\service-console.cmd" >nul
-copy /Y ".\emergency-stop-wfp.cmd" "%OUT%\emergency-stop-wfp.cmd" >nul
-
-if exist ".\tools" (
-  if not exist "%OUT%\tools" mkdir "%OUT%\tools"
-  copy /Y ".\tools\Check-GeniaFirewall.ps1" "%OUT%\tools\Check-GeniaFirewall.ps1" >nul
-  copy /Y ".\tools\Remove-GeniaFirewallRules.ps1" "%OUT%\tools\Remove-GeniaFirewallRules.ps1" >nul
-)
+rmdir /s /q "%SERVICE_STAGE%"
 
 echo.
-echo Creating portable ZIP...
-powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Compress-Archive -Path '%OUT%\*' -DestinationPath '%ZIP%' -Force"
+echo Creating one-file portable ZIP...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "Compress-Archive -LiteralPath '%OUT%\GeniaFirewall.exe' -DestinationPath '%ZIP%' -Force"
 if errorlevel 1 goto :package_error
 if not exist "%ZIP%" goto :package_error
 
@@ -90,31 +90,28 @@ if errorlevel 1 goto :package_error
 if not exist "%SHA%" goto :package_error
 
 echo.
-echo Done:
+echo Done. The portable directory contains exactly one user-facing file:
 echo   %OUT%\GeniaFirewall.exe
-echo   %OUT%\GeniaFirewall.Service.exe
-echo   %OUT%\install-service.cmd
-echo   %OUT%\emergency-stop-wfp.cmd
+echo.
+echo Package:
 echo   %ZIP%
 echo   %SHA%
 echo.
-echo Version: 0.7.3.4
-pause
+echo Version: %VERSION% (%LABEL%)
 exit /b 0
 
 :version_error
-echo ERROR: one or more GeniaFirewall 0.7.3 Stable / 0.7.3.4 version markers are missing or published versions do not match.
-pause
+echo ERROR: one or more %LABEL% / %VERSION% version markers are missing.
+exit /b 1
+
+:layout_error
+echo ERROR: portable output contains unexpected files.
 exit /b 1
 
 :publish_error
-echo.
-echo Publish failed.
-pause
+echo ERROR: publish failed.
 exit /b 1
 
 :package_error
-echo.
-echo Packaging or SHA-256 generation failed.
-pause
+echo ERROR: packaging or SHA-256 generation failed.
 exit /b 1

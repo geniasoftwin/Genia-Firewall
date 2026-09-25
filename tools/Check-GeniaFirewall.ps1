@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'Continue'
 
-Write-Host '=== GeniaFirewall 0.7.3 Stable diagnostic check ===' -ForegroundColor Cyan
+Write-Host '=== GeniaFirewall 0.7.4 RC1 diagnostic check ===' -ForegroundColor Cyan
 Write-Host ("Time: {0}" -f (Get-Date))
 Write-Host
 
@@ -109,7 +109,7 @@ if (Test-Path $data) {
     if (Test-Path $settingsFile) {
         try {
             $settings = Get-Content $settingsFile -Raw | ConvertFrom-Json
-            Write-Host ("BackendMode={0}; Protection={1}; Mode={2}" -f $settings.BackendMode, $settings.ProtectionEnabled, $settings.Mode)
+            Write-Host ("BackendMode={0}; ServiceEnabled={1}; Protection={2}; Mode={3}" -f $settings.BackendMode, $settings.ServiceEnabled, $settings.ProtectionEnabled, $settings.Mode)
         } catch {
             Write-Host "Could not parse settings.json: $($_.Exception.Message)"
         }

@@ -26,3 +26,17 @@ jobs:
 
       - name: Build
         run: dotnet build GeniaFirewall.sln --configuration Release --no-restore -p:ContinuousIntegrationBuild=true
+
+      - name: Publish and verify single-EXE portable package
+        shell: cmd
+        run: publish-portable.cmd
+
+      - name: Upload Windows test package
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: GeniaFirewall-0.7.4-RC1-SingleExe-Portable-win-x64
+          path: |
+            publish/GeniaFirewall-0.7.4-RC1-SingleExe-Portable-win-x64.zip
+            publish/GeniaFirewall-0.7.4-RC1-SHA256.txt
+          if-no-files-found: error
+          retention-days: 14
