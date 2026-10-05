@@ -1,8 +1,8 @@
-# GeniaFirewall 0.7.4 RC1
+# GeniaFirewall 0.7.4 RC2
 
 Лицензия: GPL-3.0-only. Полный текст — в `LICENSE`.
 
-Portable application firewall для Windows 10/11 на WPF/.NET 10 с самостоятельным WFP backend. Версия 0.7.4 RC1 проверяет новый жизненный цикл **Single-EXE Portable** перед выпуском Stable.
+Portable application firewall для Windows 10/11 на WPF/.NET 10 с самостоятельным WFP backend. Версия 0.7.4 RC2 усиливает жизненный цикл **Single-EXE Portable** транзакционным обновлением и полной проверкой SCM перед выпуском Stable.
 
 ## Один пользовательский EXE
 
@@ -20,9 +20,9 @@ GeniaFirewall.exe
 2. проверяет записанную копию по SHA-256;
 3. устанавливает её как LocalSystem-службу в `%ProgramFiles%\GeniaFirewall\Service`;
 4. закрывает ACL каталога, EXE и объекта SCM для `SYSTEM` и локальных администраторов;
-5. проверяет путь, запуск службы и IPC до применения WFP backend.
+5. проверяет SHA-256 payload, точную SCM-конфигурацию, файловые ACL, ACL объекта службы и IPC-идентичность до применения WFP backend.
 
-При следующих запусках встроенный Service и установленная копия сравниваются по SHA-256. Обновление выполняется только в защищённом каталоге и только при несовпадении.
+При следующих запусках встроенный Service и установленная копия сравниваются по SHA-256. При обновлении прежний EXE атомарно сохраняется как защищённый `.previous` и удаляется только после успешных SCM-, ACL- и IPC-проверок. При сбое прежний Service восстанавливается с повторной проверкой SHA-256.
 
 В `Настройки → Системная служба WFP` службу можно активировать или деактивировать. Безопасная деактивация сначала подтверждает нулевое состояние WFP, синхронизирует Windows Firewall Compatibility, затем останавливает и удаляет службу и защищённый Service EXE.
 
@@ -39,9 +39,9 @@ publish-portable.cmd
 Результат:
 
 ```text
-publish\GeniaFirewall-0.7.4-RC1-win-x64\GeniaFirewall.exe
-publish\GeniaFirewall-0.7.4-RC1-SingleExe-Portable-win-x64.zip
-publish\GeniaFirewall-0.7.4-RC1-SHA256.txt
+publish\GeniaFirewall-0.7.4-RC2-win-x64\GeniaFirewall.exe
+publish\GeniaFirewall-0.7.4-RC2-SingleExe-Portable-win-x64.zip
+publish\GeniaFirewall-0.7.4-RC2-SHA256.txt
 ```
 
 Скрипт завершится ошибкой, если версии UI/Service/Protocol расходятся, встроенный Service отсутствует, сборка дала больше одного пользовательского файла или упаковка/SHA-256 не завершились.
@@ -49,13 +49,14 @@ publish\GeniaFirewall-0.7.4-RC1-SHA256.txt
 ## Безопасность
 
 - путь SCM всегда полностью заключён в кавычки;
+- SCM проверяется по типу процесса, LocalSystem, auto-start, error-control, зависимости BFE, display name и точному quoted path;
 - каталоги бинарника и состояния Service отклоняют reparse point;
 - `%ProgramData%\GeniaFirewall\Service` и журналы службы защищаются от записи обычными пользователями;
-- stale WFP policy очищается и проверяется перед работой в Compatibility;
+- перед запуском Service в Compatibility сохранённая WFP policy удаляется, затем нулевое runtime-состояние подтверждается через IPC;
 - при незавершённой активации Service останавливается, поэтому dynamic WFP session освобождается;
 - обычные правила Microsoft Defender Firewall не удаляются.
 
-RC не подписан Authenticode: перед публичным Stable желательна подпись UI и встроенного Service. SHA-256 защищает целостность извлечения, но не заменяет подтверждение издателя.
+RC не подписан Authenticode: публичный Stable нельзя выпускать до подписи UI и встроенного Service. SHA-256 защищает целостность извлечения, но не заменяет подтверждение издателя.
 
 Уязвимости следует сообщать приватно через GitHub Security Advisory; подробности — в `SECURITY.md`.
 

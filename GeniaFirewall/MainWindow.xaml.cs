@@ -128,7 +128,9 @@ public partial class MainWindow : Window
             {
                 try
                 {
-                    var lifecycleStatus = await Task.Run(_serviceLifecycle.EnsureInstalledAndRunning);
+                    var lifecycleStatus = await Task.Run(() =>
+                        _serviceLifecycle.EnsureInstalledAndRunning(
+                            _settings.BackendMode == FirewallBackendMode.WindowsFirewallCompatibility));
                     await WaitForServiceIpcReadyAsync(TimeSpan.FromSeconds(8));
                     _diagnostics.Log($"Embedded service lifecycle ready: {lifecycleStatus.Description}; binary={lifecycleStatus.BinaryPath}");
 
@@ -523,7 +525,7 @@ public partial class MainWindow : Window
                 var lifecycleStatus = _serviceLifecycle.GetStatus();
                 if (!IsServiceReady(lifecycleStatus))
                 {
-                    await Task.Run(_serviceLifecycle.EnsureInstalledAndRunning);
+                    await Task.Run(() => _serviceLifecycle.EnsureInstalledAndRunning());
                     await WaitForServiceIpcReadyAsync(TimeSpan.FromSeconds(8));
                 }
             }
@@ -582,7 +584,9 @@ public partial class MainWindow : Window
     {
         try
         {
-            var status = await Task.Run(_serviceLifecycle.EnsureInstalledAndRunning);
+            var status = await Task.Run(() =>
+                _serviceLifecycle.EnsureInstalledAndRunning(
+                    _settings.BackendMode == FirewallBackendMode.WindowsFirewallCompatibility));
             await WaitForServiceIpcReadyAsync(TimeSpan.FromSeconds(8));
 
             // A previously persisted WFP policy must not become active merely because the
@@ -627,7 +631,7 @@ public partial class MainWindow : Window
         // atomically persist a disabled policy and prove that its WFP session is empty.
         if (lifecycleStatus.Installed || lifecycleStatus.BinaryPresent)
         {
-            await Task.Run(_serviceLifecycle.EnsureInstalledAndRunning);
+            await Task.Run(() => _serviceLifecycle.EnsureInstalledAndRunning(startWithDisabledPolicy: true));
             await WaitForServiceIpcReadyAsync(TimeSpan.FromSeconds(8));
             ClearWfpRuntimeOrThrow("service deactivation");
         }

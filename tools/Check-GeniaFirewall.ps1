@@ -1,6 +1,6 @@
 $ErrorActionPreference = 'Continue'
 
-Write-Host '=== GeniaFirewall 0.7.4 RC1 diagnostic check ===' -ForegroundColor Cyan
+Write-Host '=== GeniaFirewall 0.7.4 RC2 diagnostic check ===' -ForegroundColor Cyan
 Write-Host ("Time: {0}" -f (Get-Date))
 Write-Host
 

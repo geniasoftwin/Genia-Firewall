@@ -45,6 +45,7 @@ public sealed class ServiceLifecycleManager
     private const uint Delete = 0x00010000;
     private const uint ReadControl = 0x00020000;
     private const uint WriteDac = 0x00040000;
+    private const int FileAllAccess = 0x001f01ff;
     private const uint ServiceWin32OwnProcess = 0x00000010;
     private const int ServiceAllAccess = 0x000f01ff;
     private const int GenericAll = 0x10000000;
@@ -85,6 +86,22 @@ public sealed class ServiceLifecycleManager
         ServiceBinaryPath = Path.Combine(ServiceDirectory, ServiceFileName);
         StagedServiceBinaryPath = ServiceBinaryPath + ".new";
         RollbackServiceBinaryPath = ServiceBinaryPath + ".previous";
+
+        var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
+        if (string.IsNullOrWhiteSpace(programData))
+        {
+            ServiceStateProductDirectory = string.Empty;
+            ServiceStateDirectory = string.Empty;
+            ServicePolicyPath = string.Empty;
+            StagedServicePolicyPath = string.Empty;
+        }
+        else
+        {
+            ServiceStateProductDirectory = Path.Combine(programData, "GeniaFirewall");
+            ServiceStateDirectory = Path.Combine(ServiceStateProductDirectory, "Service");
+            ServicePolicyPath = Path.Combine(ServiceStateDirectory, "wfp-policy.json");
+            StagedServicePolicyPath = ServicePolicyPath + ".tmp";
+        }
     }
 
     public string ProductDirectory { get; }
@@ -92,11 +109,17 @@ public sealed class ServiceLifecycleManager
     public string ServiceBinaryPath { get; }
     private string StagedServiceBinaryPath { get; }
     private string RollbackServiceBinaryPath { get; }
+    private string ServiceStateProductDirectory { get; }
+    private string ServiceStateDirectory { get; }
+    private string ServicePolicyPath { get; }
+    private string StagedServicePolicyPath { get; }
 
-    public ServiceLifecycleStatus EnsureInstalledAndRunning()
+    public ServiceLifecycleStatus EnsureInstalledAndRunning(bool startWithDisabledPolicy = false)
     {
         EnsureSupportedAndElevated();
         EnsureSafeInstallPaths();
+        if (startWithDisabledPolicy)
+            RemovePersistedServicePolicyBeforeStart();
 
         var payload = ReadEmbeddedServicePayload();
         var payloadHash = SHA256.HashData(payload);
@@ -130,6 +153,8 @@ public sealed class ServiceLifecycleManager
             ProtectServiceObject(service);
             StartServiceAndWait(service, TimeSpan.FromSeconds(20));
             WaitForCompatibleServiceIpc(TimeSpan.FromSeconds(8), requireCurrentProductVersion: true);
+            if (startWithDisabledPolicy)
+                ClearServicePolicyAndVerify();
 
             var status = GetStatus();
             if (!status.Installed || !status.Running || !status.BinaryPresent ||
@@ -298,6 +323,52 @@ public sealed class ServiceLifecycleManager
         Directory.CreateDirectory(ServiceDirectory);
         RejectReparsePoint(ServiceDirectory);
         ApplyProtectedDacl(ServiceDirectory, DirectorySddl);
+    }
+
+    private void RemovePersistedServicePolicyBeforeStart()
+    {
+        if (string.IsNullOrWhiteSpace(ServiceStateProductDirectory) ||
+            string.IsNullOrWhiteSpace(ServiceStateDirectory))
+        {
+            throw new InvalidOperationException("The ProgramData path could not be resolved.");
+        }
+
+        if (!Directory.Exists(ServiceStateProductDirectory))
+            return;
+
+        RejectReparsePoint(ServiceStateProductDirectory);
+        ApplyProtectedDacl(ServiceStateProductDirectory, DirectorySddl);
+
+        if (!Directory.Exists(ServiceStateDirectory))
+            return;
+
+        RejectReparsePoint(ServiceStateDirectory);
+        ApplyProtectedDacl(ServiceStateDirectory, DirectorySddl);
+        DeleteFileWithRetry(StagedServicePolicyPath, TimeSpan.FromSeconds(5));
+        DeleteFileWithRetry(ServicePolicyPath, TimeSpan.FromSeconds(5));
+    }
+
+    private static void ClearServicePolicyAndVerify()
+    {
+        var clear = new GeniaFirewallServiceClient().ClearWfpPolicy();
+        if (!clear.Success || clear.Status is null)
+        {
+            throw new InvalidOperationException(
+                $"GeniaFirewall.Service did not confirm disabled startup policy: {clear.Description}");
+        }
+
+        var status = clear.Status;
+        if (status.WfpBackendActive || status.WfpEngineOpen || status.ProviderRegistered ||
+            status.SubLayerRegistered || status.ActiveFilterCount != 0 ||
+            !status.RuntimeFilterCleanupVerified || status.ResidualRuntimeFilterCount != 0)
+        {
+            throw new InvalidOperationException(
+                "GeniaFirewall.Service disabled-policy verification failed: " +
+                $"backendActive={status.WfpBackendActive}; engineOpen={status.WfpEngineOpen}; " +
+                $"provider={status.ProviderRegistered}; sublayer={status.SubLayerRegistered}; " +
+                $"filters={status.ActiveFilterCount}; cleanupVerified={status.RuntimeFilterCleanupVerified}; " +
+                $"residual={status.ResidualRuntimeFilterCount}.");
+        }
     }
 
     private static byte[] ReadEmbeddedServicePayload()
@@ -909,11 +980,7 @@ public sealed class ServiceLifecycleManager
         try
         {
             RejectReparsePoint(path);
-            var expectedSddl = Directory.Exists(path) ? DirectorySddl : FileSddl;
-            return DaclMatchesExactly(
-                ReadDaclSddl(path),
-                expectedSddl,
-                requireProtectedDacl: true);
+            return FileDaclMatchesExactly(ReadDaclSddl(path), Directory.Exists(path));
         }
         catch
         {
@@ -921,28 +988,38 @@ public sealed class ServiceLifecycleManager
         }
     }
 
-    private static bool DaclMatchesExactly(
-        string actualSddl,
-        string expectedSddl,
-        bool requireProtectedDacl)
+    private static bool FileDaclMatchesExactly(string actualSddl, bool directory)
     {
         var actual = new RawSecurityDescriptor(actualSddl);
-        var expected = new RawSecurityDescriptor(expectedSddl);
-
-        if (actual.DiscretionaryAcl is null || expected.DiscretionaryAcl is null)
-            return false;
-
-        if (requireProtectedDacl &&
+        var dacl = actual.DiscretionaryAcl;
+        if (dacl is null || dacl.Count != 2 ||
             (actual.ControlFlags & ControlFlags.DiscretionaryAclProtected) == 0)
         {
             return false;
         }
 
-        var actualBytes = new byte[actual.DiscretionaryAcl.BinaryLength];
-        var expectedBytes = new byte[expected.DiscretionaryAcl.BinaryLength];
-        actual.DiscretionaryAcl.GetBinaryForm(actualBytes, 0);
-        expected.DiscretionaryAcl.GetBinaryForm(expectedBytes, 0);
-        return actualBytes.AsSpan().SequenceEqual(expectedBytes);
+        var expectedFlags = directory
+            ? AceFlags.ContainerInherit | AceFlags.ObjectInherit
+            : AceFlags.None;
+        var expectedSids = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "S-1-5-18",
+            "S-1-5-32-544"
+        };
+
+        foreach (GenericAce genericAce in dacl)
+        {
+            if (genericAce is not CommonAce ace ||
+                ace.AceQualifier != AceQualifier.AccessAllowed ||
+                ace.AceFlags != expectedFlags ||
+                ace.AccessMask != FileAllAccess ||
+                !expectedSids.Remove(ace.SecurityIdentifier.Value))
+            {
+                return false;
+            }
+        }
+
+        return expectedSids.Count == 0;
     }
 
     private static string ReadDaclSddl(string path)

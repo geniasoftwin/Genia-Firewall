@@ -1,4 +1,4 @@
-# GeniaFirewall 0.7.4 RC1 — Single-EXE Portable
+# GeniaFirewall 0.7.4 RC2 — Single-EXE Portable Hardening
 
 ## Изменения
 
@@ -6,6 +6,7 @@
 - Self-contained `GeniaFirewall.Service.exe` встраивается внутрь UI как ресурс сборки.
 - При первом запуске Service автоматически устанавливается в `%ProgramFiles%\GeniaFirewall\Service` и запускается через SCM.
 - При обновлении UI сравнивает SHA-256 встроенного и установленного Service; совпадающая копия не перезаписывается.
+- Отличающийся Service заменяется транзакционно: прежний защищённый EXE хранится как `.previous` до полного health-check и восстанавливается при сбое.
 - В настройках добавлены состояние, активация и безопасная деактивация службы.
 - Явная деактивация сохраняется в portable-настройках и не отменяется следующим запуском.
 - Выбор WFP запрещён, пока защищённая служба не установлена, не запущена и не проверена.
@@ -16,10 +17,12 @@
 - Путь бинарника SCM полностью заключён в кавычки.
 - ACL каталогов и файлов Service разрешает полный доступ только `SYSTEM` (`S-1-5-18`) и `BUILTIN\Administrators` (`S-1-5-32-544`).
 - Объект службы SCM также закрывается для этих двух субъектов.
+- После установки проверяется полный SCM contract: own-process, LocalSystem, auto-start, normal error-control, BFE, display name и точный quoted path.
+- ACL файлов сравниваются с точным ожидаемым DACL; ACL объекта службы допускает ровно `SYSTEM` и `Administrators` с полным доступом.
 - Установщик отклоняет reparse point в привилегированных путях.
 - Staging записывается с `WriteThrough`, затем проверяется SHA-256 до и после перемещения.
 - Policy и журналы LocalSystem-службы под `%ProgramData%\GeniaFirewall` получают защищённый ACL.
-- Compatibility startup не продолжается, пока Service не подтвердит нулевое WFP-состояние.
+- Перед запуском Service в Compatibility сохранённая policy удаляется из защищённого ProgramData, затем Service подтверждает нулевое WFP-состояние через IPC.
 - При ошибке активации служба останавливается/удаляется, освобождая dynamic WFP session.
 
 ## Совместимость

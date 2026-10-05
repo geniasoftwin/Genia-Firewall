@@ -3,7 +3,7 @@ setlocal EnableExtensions
 cd /d "%~dp0"
 
 set "VERSION=0.7.4.0"
-set "LABEL=0.7.4-RC1"
+set "LABEL=0.7.4-RC2"
 set "OUT=.\publish\GeniaFirewall-%LABEL%-win-x64"
 set "SERVICE_STAGE=.\publish\.service-%LABEL%-win-x64"
 set "ZIP=.\publish\GeniaFirewall-%LABEL%-SingleExe-Portable-win-x64.zip"
