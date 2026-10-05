@@ -4,6 +4,7 @@ cd /d "%~dp0"
 
 set "VERSION=0.7.4.0"
 set "LABEL=0.7.4-RC2"
+set "DISPLAY_VERSION=%LABEL:-= %"
 set "OUT=.\publish\GeniaFirewall-%LABEL%-win-x64"
 set "SERVICE_STAGE=.\publish\.service-%LABEL%-win-x64"
 set "ZIP=.\publish\GeniaFirewall-%LABEL%-SingleExe-Portable-win-x64.zip"
@@ -13,6 +14,9 @@ set "SERVICE_PROJECT=.\GeniaFirewall.Service\GeniaFirewall.Service.csproj"
 set "PROTOCOL_PROJECT=.\GeniaFirewall.Protocol\GeniaFirewall.Protocol.csproj"
 set "MANIFEST=.\GeniaFirewall\app.manifest"
 set "SERVICE_MANIFEST=.\GeniaFirewall.Service\app.manifest"
+set "MAIN_XAML=.\GeniaFirewall\MainWindow.xaml"
+set "STRINGS_RU=.\GeniaFirewall\Resources\Strings.ru-RU.xaml"
+set "STRINGS_EN=.\GeniaFirewall\Resources\Strings.en-US.xaml"
 
 echo Checking GeniaFirewall %LABEL% version metadata...
 findstr /L /C:"%VERSION%" "%MANIFEST%" >nul || goto :version_error
@@ -24,6 +28,9 @@ findstr /L /C:"<Version>%VERSION%</Version>" "%SERVICE_PROJECT%" >nul || goto :v
 findstr /L /C:"<AssemblyVersion>%VERSION%</AssemblyVersion>" "%SERVICE_PROJECT%" >nul || goto :version_error
 findstr /L /C:"<FileVersion>%VERSION%</FileVersion>" "%SERVICE_PROJECT%" >nul || goto :version_error
 findstr /L /C:"<Version>%VERSION%</Version>" "%PROTOCOL_PROJECT%" >nul || goto :version_error
+findstr /L /C:"%DISPLAY_VERSION%" "%MAIN_XAML%" >nul || goto :version_error
+findstr /L /C:"%DISPLAY_VERSION%" "%STRINGS_RU%" >nul || goto :version_error
+findstr /L /C:"%DISPLAY_VERSION%" "%STRINGS_EN%" >nul || goto :version_error
 
 echo Cleaning stale bin/obj and old publish output...
 for %%D in (".\GeniaFirewall\bin" ".\GeniaFirewall\obj" ".\GeniaFirewall.Service\bin" ".\GeniaFirewall.Service\obj" ".\GeniaFirewall.Protocol\bin" ".\GeniaFirewall.Protocol\obj") do (
