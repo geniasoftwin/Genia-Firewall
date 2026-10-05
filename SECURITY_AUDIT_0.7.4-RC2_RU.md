@@ -20,6 +20,7 @@
 - Деактивация требует подтверждённого нулевого WFP runtime до остановки/удаления.
 - Compatibility startup удаляет persisted policy до запуска Service и повторно подтверждает нулевой runtime через IPC.
 - `ServiceEnabled=false` не позволяет автоматически вернуться на WFP.
+- `BlockAll` является абсолютным kill switch для TCP/UDP IPv4/IPv6: app-level allow и loopback-исключения в этом режиме не устанавливаются, а транзакция требует ровно восемь глобальных блокирующих фильтров.
 
 ## Остаточные риски до Stable
 

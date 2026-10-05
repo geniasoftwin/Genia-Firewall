@@ -47,7 +47,7 @@
 
 ## 6. Networking regression
 
-- [ ] Normal / Allow all / Block all / Monitor.
+- [ ] Normal / Allow all / Monitor; Block all создаёт ровно 8 глобальных фильтров и блокирует также ранее разрешённые приложения и loopback.
 - [ ] Allow, Block, Ask, temporary allow, Safe Del quarantine.
 - [ ] IPv4/IPv6, TCP/UDP, inbound/outbound.
 - [ ] GeniaProxy TUN connect/disconnect и смена backend без residual filters.
