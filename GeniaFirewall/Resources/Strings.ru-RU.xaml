@@ -13,6 +13,8 @@
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Settings">Настройки</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.ProtectionOn">Защита ВКЛ</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.ProtectionOff">Защита ВЫКЛ</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.BlockAllActive.Title">Глобальная блокировка активна</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.BlockAllActive.Message">Все сохранённые правила временно перекрыты. Интернет, VPN/TUN и loopback заблокированы; правила снова применятся после смены режима.</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.SortTooltip">Нажмите для сортировки</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.Allow">Разрешить</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Main.Context.Block">Блокировать</sys:String>
@@ -56,6 +58,8 @@
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.OutgoingOnly">Только исходящие</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.IncomingOnly">Только входящие</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.DisableAll">Блокировать всё</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.BlockedByBlockAll">Глобально заблокировано</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Access.BlockedByBlockAllHint">Сохранённое правило не изменено и снова вступит в силу после выхода из режима «Блокировать всё».</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="RuleProfile.None">Обычное правило</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Temp.UntilExit">До закрытия</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Temp.TenMinutes">Временно · 10 мин</sys:String>

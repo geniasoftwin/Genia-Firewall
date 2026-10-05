@@ -60,7 +60,19 @@ public partial class MainWindow : Window
     private ListSortDirection _sortDirection = ListSortDirection.Ascending;
     private GridViewColumnHeader? _sortHeader;
 
+    public static readonly DependencyProperty IsBlockAllEffectiveProperty = DependencyProperty.Register(
+        nameof(IsBlockAllEffective),
+        typeof(bool),
+        typeof(MainWindow),
+        new PropertyMetadata(false));
+
     public ObservableCollection<ManagedApplication> Applications { get; } = [];
+
+    public bool IsBlockAllEffective
+    {
+        get => (bool)GetValue(IsBlockAllEffectiveProperty);
+        private set => SetValue(IsBlockAllEffectiveProperty, value);
+    }
 
     public MainWindow()
     {
@@ -1120,7 +1132,7 @@ public partial class MainWindow : Window
         {
             var result = System.Windows.MessageBox.Show(
                 this,
-                L("Защита будет включена в режиме «Блокировать всё». Исходящие подключения будут заблокированы.\n\nПродолжить?", "Protection will be enabled in Block all mode. Outbound connections will be blocked.\n\nContinue?"),
+                L("Защита будет включена в режиме «Блокировать всё». Интернет, VPN/TUN и локальные loopback-подключения будут заблокированы.\n\nПродолжить?", "Protection will be enabled in Block all mode. Internet, VPN/TUN, and local loopback connections will be blocked.\n\nContinue?"),
                 "GeniaFirewall",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning);
@@ -1169,7 +1181,7 @@ public partial class MainWindow : Window
         {
             var result = System.Windows.MessageBox.Show(
                 this,
-                L("Режим «Блокировать всё» создаст глобальное правило, запрещающее исходящие подключения. Интернет у программ временно перестанет работать до смены режима.\n\nВключить?", "Block all mode creates a global rule that blocks outbound connections. Applications will temporarily lose network access until the mode is changed.\n\nEnable it?"),
+                L("Режим «Блокировать всё» перекроет все правила приложений и заблокирует интернет, VPN/TUN и локальные loopback-подключения до смены режима. Сохранённые правила не будут удалены.\n\nВключить?", "Block all mode overrides every application rule and blocks internet, VPN/TUN, and local loopback connections until the mode is changed. Saved rules will not be deleted.\n\nEnable it?"),
                 "GeniaFirewall",
                 MessageBoxButton.YesNo,
                 MessageBoxImage.Warning);
@@ -3451,6 +3463,7 @@ public partial class MainWindow : Window
 
     private void UpdateProtectionUi()
     {
+        IsBlockAllEffective = _protectionEnabled && _mode == FirewallMode.BlockAll;
         ProtectionText.Text = _protectionEnabled
             ? LocalizationService.Get("Main.ProtectionOn")
             : LocalizationService.Get("Main.ProtectionOff");
