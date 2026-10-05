@@ -2,6 +2,7 @@ using System.ComponentModel;
 using System.IO;
 using System.Reflection;
 using System.Runtime.InteropServices;
+using System.Security.AccessControl;
 using System.Security.Cryptography;
 using System.Security.Principal;
 using Microsoft.Win32.SafeHandles;
@@ -13,8 +14,10 @@ public sealed record ServiceLifecycleStatus(
     bool Installed,
     bool Running,
     bool BinaryPresent,
+    bool PayloadVerified,
     bool ConfigurationValid,
     bool StorageProtected,
+    bool ServiceObjectProtected,
     string BinaryPath,
     string Description);
 
@@ -40,11 +43,13 @@ public sealed class ServiceLifecycleManager
     private const uint ServiceStart = 0x0010;
     private const uint ServiceStop = 0x0020;
     private const uint Delete = 0x00010000;
+    private const uint ReadControl = 0x00020000;
     private const uint WriteDac = 0x00040000;
     private const uint ServiceWin32OwnProcess = 0x00000010;
+    private const int ServiceAllAccess = 0x000f01ff;
+    private const int GenericAll = 0x10000000;
     private const uint ServiceAutoStart = 0x00000002;
     private const uint ServiceErrorNormal = 0x00000001;
-    private const uint ServiceNoChange = 0xffffffff;
     private const uint ServiceControlStop = 0x00000001;
     private const uint ServiceStopped = 0x00000001;
     private const uint ServiceStartPending = 0x00000002;
@@ -65,6 +70,9 @@ public sealed class ServiceLifecycleManager
     private const uint SddlRevision1 = 1;
     private const uint DaclSecurityInformation = 0x00000004;
     private const uint ProtectedDaclSecurityInformation = 0x80000000;
+    private static readonly Lazy<byte[]> EmbeddedServiceHash = new(
+        ComputeEmbeddedServiceHash,
+        LazyThreadSafetyMode.ExecutionAndPublication);
 
     public ServiceLifecycleManager()
     {
@@ -76,12 +84,14 @@ public sealed class ServiceLifecycleManager
         ServiceDirectory = Path.Combine(ProductDirectory, "Service");
         ServiceBinaryPath = Path.Combine(ServiceDirectory, ServiceFileName);
         StagedServiceBinaryPath = ServiceBinaryPath + ".new";
+        RollbackServiceBinaryPath = ServiceBinaryPath + ".previous";
     }
 
     public string ProductDirectory { get; }
     public string ServiceDirectory { get; }
     public string ServiceBinaryPath { get; }
     private string StagedServiceBinaryPath { get; }
+    private string RollbackServiceBinaryPath { get; }
 
     public ServiceLifecycleStatus EnsureInstalledAndRunning()
     {
@@ -94,7 +104,8 @@ public sealed class ServiceLifecycleManager
         using var serviceManager = OpenServiceManager(ScManagerConnect | ScManagerCreateService);
         using var existingService = OpenServiceIfPresent(
             serviceManager,
-            ServiceQueryConfig | ServiceChangeConfig | ServiceQueryStatus | ServiceStart | ServiceStop | Delete | WriteDac);
+            ServiceQueryConfig | ServiceChangeConfig | ServiceQueryStatus | ServiceStart | ServiceStop |
+            Delete | ReadControl | WriteDac);
 
         var serviceExists = existingService is not null;
         var installedPayloadMatches = File.Exists(ServiceBinaryPath) &&
@@ -104,15 +115,13 @@ public sealed class ServiceLifecycleManager
         if (serviceExists && (!installedPayloadMatches || !configuredPathMatches))
             StopServiceAndWait(existingService!, TimeSpan.FromSeconds(20));
 
-        if (!installedPayloadMatches)
-            WriteProtectedPayload(payload, payloadHash);
-        else
-            ProtectFile(ServiceBinaryPath);
+        var payloadUpdate = PreparePayloadUpdate(payload, payloadHash, installedPayloadMatches);
 
         SafeServiceHandle? createdService = null;
+        SafeServiceHandle? service = existingService;
         try
         {
-            var service = existingService ?? (createdService = CreateConfiguredService(serviceManager));
+            service ??= createdService = CreateConfiguredService(serviceManager);
             if (existingService is not null)
                 ConfigureExistingService(existingService);
 
@@ -120,20 +129,41 @@ public sealed class ServiceLifecycleManager
             ConfigureFailureRecovery(service);
             ProtectServiceObject(service);
             StartServiceAndWait(service, TimeSpan.FromSeconds(20));
+            WaitForCompatibleServiceIpc(TimeSpan.FromSeconds(8), requireCurrentProductVersion: true);
+
+            var status = GetStatus();
+            if (!status.Installed || !status.Running || !status.BinaryPresent ||
+                !status.PayloadVerified || !status.ConfigurationValid || !status.StorageProtected ||
+                !status.ServiceObjectProtected)
+            {
+                throw new InvalidOperationException($"Service installation verification failed: {status.Description}");
+            }
+
+            CommitPayloadUpdate(payloadUpdate);
+            return status;
+        }
+        catch (Exception updateError) when (payloadUpdate.PreviousHash is not null)
+        {
+            try
+            {
+                RollBackPayloadUpdate(service, payloadUpdate);
+            }
+            catch (Exception rollbackError)
+            {
+                throw new AggregateException(
+                    "The service update failed and the previous protected payload could not be restored.",
+                    updateError,
+                    rollbackError);
+            }
+
+            throw new InvalidOperationException(
+                "The service update failed; the previous protected service was restored and restarted.",
+                updateError);
         }
         finally
         {
             createdService?.Dispose();
         }
-
-        var status = GetStatus();
-        if (!status.Installed || !status.Running || !status.BinaryPresent ||
-            !status.ConfigurationValid || !status.StorageProtected)
-        {
-            throw new InvalidOperationException($"Service installation verification failed: {status.Description}");
-        }
-
-        return status;
     }
 
     public ServiceLifecycleStatus DeactivateAndRemove()
@@ -177,11 +207,14 @@ public sealed class ServiceLifecycleManager
                 File.Exists(ServiceBinaryPath),
                 false,
                 false,
+                false,
+                false,
                 ServiceBinaryPath,
                 "Windows is required");
         }
 
         var binaryPresent = File.Exists(ServiceBinaryPath);
+        var payloadVerified = binaryPresent && IsEmbeddedPayload(ServiceBinaryPath);
         var protectedStorage = binaryPresent &&
                                IsProtectedPath(ProductDirectory) &&
                                IsProtectedPath(ServiceDirectory) &&
@@ -190,31 +223,42 @@ public sealed class ServiceLifecycleManager
         try
         {
             using var serviceManager = OpenServiceManager(ScManagerConnect);
-            using var service = OpenServiceIfPresent(serviceManager, ServiceQueryConfig | ServiceQueryStatus);
+            using var service = OpenServiceIfPresent(
+                serviceManager,
+                ServiceQueryConfig | ServiceQueryStatus | ReadControl);
             if (service is null)
             {
                 return new ServiceLifecycleStatus(
                     false,
                     false,
                     binaryPresent,
+                    payloadVerified,
                     false,
                     protectedStorage,
+                    false,
                     ServiceBinaryPath,
                     binaryPresent ? "service is not registered; protected binary remains" : "service is not installed");
             }
 
             var state = QueryServiceState(service);
-            var configurationValid = ServicePathMatches(service, ServiceBinaryPath) &&
-                                     QueryServiceConfiguration(service).StartType == ServiceAutoStart;
+            var configurationValid = ServiceConfigurationMatches(
+                QueryServiceConfiguration(service),
+                ServiceBinaryPath);
+            var serviceObjectProtected = IsProtectedServiceObject(service);
             var running = state == ServiceRunning;
             return new ServiceLifecycleStatus(
                 true,
                 running,
                 binaryPresent,
+                payloadVerified,
                 configurationValid,
                 protectedStorage,
+                serviceObjectProtected,
                 ServiceBinaryPath,
-                $"installed; state={FormatServiceState(state)}; path={(configurationValid ? "verified" : "unexpected")}; ACL={(protectedStorage ? "protected" : "unverified")}");
+                $"installed; state={FormatServiceState(state)}; payload={(payloadVerified ? "verified" : "unexpected")}; " +
+                $"SCM config={(configurationValid ? "verified" : "unexpected")}; " +
+                $"file ACL={(protectedStorage ? "protected" : "unverified")}; " +
+                $"service ACL={(serviceObjectProtected ? "protected" : "unverified")}");
         }
         catch (Win32Exception ex) when (ex.NativeErrorCode == ErrorAccessDenied)
         {
@@ -222,8 +266,10 @@ public sealed class ServiceLifecycleManager
                 false,
                 false,
                 binaryPresent,
+                payloadVerified,
                 false,
                 protectedStorage,
+                false,
                 ServiceBinaryPath,
                 "service status access denied");
         }
@@ -272,9 +318,32 @@ public sealed class ServiceLifecycleManager
         return payload;
     }
 
-    private void WriteProtectedPayload(byte[] payload, byte[] expectedHash)
+    private PayloadUpdateTransaction PreparePayloadUpdate(
+        byte[] payload,
+        byte[] expectedHash,
+        bool installedPayloadMatches)
     {
         TryDeleteFile(StagedServiceBinaryPath);
+
+        if (installedPayloadMatches)
+        {
+            ProtectFile(ServiceBinaryPath);
+            return new PayloadUpdateTransaction(ReadProtectedRollbackHashIfPresent());
+        }
+
+        byte[]? previousHash;
+        if (File.Exists(ServiceBinaryPath))
+        {
+            ProtectFile(ServiceBinaryPath);
+            previousHash = ComputeFileHash(ServiceBinaryPath);
+            DeleteFileWithRetry(RollbackServiceBinaryPath, TimeSpan.FromSeconds(5));
+        }
+        else
+        {
+            previousHash = ReadProtectedRollbackHashIfPresent();
+        }
+
+        var targetReplaced = false;
         try
         {
             using (var stream = new FileStream(
@@ -294,16 +363,149 @@ public sealed class ServiceLifecycleManager
             if (!HashesEqual(expectedHash, stagedHash))
                 throw new InvalidDataException("The staged GeniaFirewall.Service payload failed SHA-256 verification.");
 
-            File.Move(StagedServiceBinaryPath, ServiceBinaryPath, overwrite: true);
+            if (File.Exists(ServiceBinaryPath))
+            {
+                File.Replace(
+                    StagedServiceBinaryPath,
+                    ServiceBinaryPath,
+                    RollbackServiceBinaryPath,
+                    ignoreMetadataErrors: false);
+            }
+            else
+            {
+                File.Move(StagedServiceBinaryPath, ServiceBinaryPath);
+            }
+
+            targetReplaced = true;
             ProtectFile(ServiceBinaryPath);
 
             var installedHash = ComputeFileHash(ServiceBinaryPath);
             if (!HashesEqual(expectedHash, installedHash))
                 throw new InvalidDataException("The installed GeniaFirewall.Service payload failed SHA-256 verification.");
+
+            if (previousHash is not null)
+            {
+                if (!File.Exists(RollbackServiceBinaryPath))
+                    throw new IOException("The previous protected service payload was not retained for rollback.");
+
+                ProtectFile(RollbackServiceBinaryPath);
+                var retainedHash = ComputeFileHash(RollbackServiceBinaryPath);
+                if (!HashesEqual(previousHash, retainedHash))
+                    throw new InvalidDataException("The retained rollback service payload failed SHA-256 verification.");
+            }
+
+            return new PayloadUpdateTransaction(previousHash);
+        }
+        catch
+        {
+            if (targetReplaced)
+            {
+                if (previousHash is not null)
+                    RestorePreviousPayloadFile(previousHash);
+                else
+                    DeleteFileWithRetry(ServiceBinaryPath, TimeSpan.FromSeconds(5));
+            }
+
+            throw;
         }
         finally
         {
             TryDeleteFile(StagedServiceBinaryPath);
+        }
+    }
+
+    private byte[]? ReadProtectedRollbackHashIfPresent()
+    {
+        if (!File.Exists(RollbackServiceBinaryPath))
+            return null;
+
+        ProtectFile(RollbackServiceBinaryPath);
+        return ComputeFileHash(RollbackServiceBinaryPath);
+    }
+
+    private void CommitPayloadUpdate(PayloadUpdateTransaction transaction)
+    {
+        if (transaction.PreviousHash is not null || File.Exists(RollbackServiceBinaryPath))
+            DeleteFileWithRetry(RollbackServiceBinaryPath, TimeSpan.FromSeconds(5));
+    }
+
+    private void RollBackPayloadUpdate(
+        SafeServiceHandle? service,
+        PayloadUpdateTransaction transaction)
+    {
+        var previousHash = transaction.PreviousHash
+            ?? throw new InvalidOperationException("No protected rollback payload is available.");
+
+        if (service is not null)
+            StopServiceAndWait(service, TimeSpan.FromSeconds(20));
+
+        RestorePreviousPayloadFile(previousHash);
+
+        if (service is null)
+            return;
+
+        ConfigureExistingService(service);
+        ConfigureDescription(service);
+        ConfigureFailureRecovery(service);
+        ProtectServiceObject(service);
+        StartServiceAndWait(service, TimeSpan.FromSeconds(20));
+        WaitForCompatibleServiceIpc(TimeSpan.FromSeconds(8), requireCurrentProductVersion: false);
+
+        var status = GetStatus();
+        if (!status.Installed || !status.Running || !status.BinaryPresent ||
+            !status.ConfigurationValid || !status.StorageProtected || !status.ServiceObjectProtected)
+        {
+            throw new InvalidOperationException($"Restored service verification failed: {status.Description}");
+        }
+    }
+
+    private void RestorePreviousPayloadFile(byte[] expectedHash)
+    {
+        if (!File.Exists(RollbackServiceBinaryPath))
+            throw new FileNotFoundException(
+                "The protected rollback service payload is missing.",
+                RollbackServiceBinaryPath);
+
+        ProtectFile(RollbackServiceBinaryPath);
+        if (!HashesEqual(expectedHash, ComputeFileHash(RollbackServiceBinaryPath)))
+            throw new InvalidDataException("The rollback service payload failed SHA-256 verification before restore.");
+
+        if (File.Exists(ServiceBinaryPath))
+        {
+            File.Replace(
+                RollbackServiceBinaryPath,
+                ServiceBinaryPath,
+                destinationBackupFileName: null,
+                ignoreMetadataErrors: false);
+        }
+        else
+        {
+            File.Move(RollbackServiceBinaryPath, ServiceBinaryPath);
+        }
+
+        ProtectFile(ServiceBinaryPath);
+        if (!HashesEqual(expectedHash, ComputeFileHash(ServiceBinaryPath)))
+            throw new InvalidDataException("The restored service payload failed SHA-256 verification.");
+    }
+
+    private static byte[] ComputeEmbeddedServiceHash()
+    {
+        using var payloadStream = Assembly.GetExecutingAssembly()
+            .GetManifestResourceStream(EmbeddedServiceResourceName)
+            ?? throw new InvalidOperationException(
+                "The embedded GeniaFirewall.Service payload is missing. Use the official single-EXE portable build.");
+        return SHA256.HashData(payloadStream);
+    }
+
+    private static bool IsEmbeddedPayload(string path)
+    {
+        try
+        {
+            return HashesEqual(EmbeddedServiceHash.Value, ComputeFileHash(path));
+        }
+        catch
+        {
+            return false;
         }
     }
 
@@ -326,7 +528,8 @@ public sealed class ServiceLifecycleManager
                 serviceManager,
                 ServiceProtocol.ServiceName,
                 ServiceProtocol.DisplayName,
-                ServiceQueryConfig | ServiceChangeConfig | ServiceQueryStatus | ServiceStart | ServiceStop | Delete | WriteDac,
+                ServiceQueryConfig | ServiceChangeConfig | ServiceQueryStatus | ServiceStart | ServiceStop |
+                Delete | ReadControl | WriteDac,
                 ServiceWin32OwnProcess,
                 ServiceAutoStart,
                 ServiceErrorNormal,
@@ -355,14 +558,14 @@ public sealed class ServiceLifecycleManager
         {
             if (!ChangeServiceConfig(
                     service,
-                    ServiceNoChange,
+                    ServiceWin32OwnProcess,
                     ServiceAutoStart,
-                    ServiceNoChange,
+                    ServiceErrorNormal,
                     QuoteServiceBinaryPath(ServiceBinaryPath),
                     null,
                     IntPtr.Zero,
                     dependencies,
-                    null,
+                    "LocalSystem",
                     null,
                     ServiceProtocol.DisplayName))
             {
@@ -432,6 +635,49 @@ public sealed class ServiceLifecycleManager
         {
             _ = LocalFree(securityDescriptor);
         }
+
+        if (!IsProtectedServiceObject(service))
+            throw new UnauthorizedAccessException("SCM service-object ACL verification failed.");
+    }
+
+    private static bool IsProtectedServiceObject(SafeServiceHandle service)
+    {
+        try
+        {
+            return ServiceDaclMatchesExactly(ReadServiceDaclSddl(service));
+        }
+        catch
+        {
+            return false;
+        }
+    }
+
+    private static bool ServiceDaclMatchesExactly(string actualSddl)
+    {
+        var descriptor = new RawSecurityDescriptor(actualSddl);
+        var dacl = descriptor.DiscretionaryAcl;
+        if (dacl is null || dacl.Count != 2)
+            return false;
+
+        var expectedSids = new HashSet<string>(StringComparer.Ordinal)
+        {
+            "S-1-5-18",
+            "S-1-5-32-544"
+        };
+
+        foreach (GenericAce genericAce in dacl)
+        {
+            if (genericAce is not CommonAce ace ||
+                ace.AceQualifier != AceQualifier.AccessAllowed ||
+                ace.AceFlags != AceFlags.None ||
+                (ace.AccessMask != GenericAll && ace.AccessMask != ServiceAllAccess) ||
+                !expectedSids.Remove(ace.SecurityIdentifier.Value))
+            {
+                return false;
+            }
+        }
+
+        return expectedSids.Count == 0;
     }
 
     private static void StartServiceAndWait(SafeServiceHandle service, TimeSpan timeout)
@@ -448,6 +694,50 @@ public sealed class ServiceLifecycleManager
         }
 
         WaitForState(service, ServiceRunning, timeout);
+    }
+
+    private static void WaitForCompatibleServiceIpc(
+        TimeSpan timeout,
+        bool requireCurrentProductVersion)
+    {
+        var deadline = DateTime.UtcNow + timeout;
+        var client = new GeniaFirewallServiceClient();
+        var lastDescription = "no IPC response";
+
+        while (DateTime.UtcNow < deadline)
+        {
+            var probe = client.Probe(500);
+            lastDescription = probe.Description;
+            if (probe.Reachable && probe.Status is { } status)
+            {
+                var serviceNameMatches = string.Equals(
+                    status.ServiceName,
+                    ServiceProtocol.ServiceName,
+                    StringComparison.Ordinal);
+                var protocolMatches = string.Equals(
+                    status.ProtocolVersion,
+                    ServiceProtocol.ProtocolVersion,
+                    StringComparison.Ordinal);
+                var productMatches = string.Equals(
+                    status.ProductVersion,
+                    ServiceProtocol.ProductVersion,
+                    StringComparison.Ordinal);
+
+                if (status.Running && serviceNameMatches && protocolMatches &&
+                    (!requireCurrentProductVersion || productMatches))
+                {
+                    return;
+                }
+
+                lastDescription =
+                    $"identity mismatch: service={status.ServiceName}; protocol={status.ProtocolVersion}; " +
+                    $"product={status.ProductVersion}; running={status.Running}";
+            }
+
+            Thread.Sleep(100);
+        }
+
+        throw new TimeoutException($"GeniaFirewall.Service IPC verification timed out: {lastDescription}");
     }
 
     private static void StopServiceAndWait(SafeServiceHandle service, TimeSpan timeout)
@@ -513,6 +803,7 @@ public sealed class ServiceLifecycleManager
 
         DeleteFileWithRetry(StagedServiceBinaryPath, TimeSpan.FromSeconds(5));
         DeleteFileWithRetry(ServiceBinaryPath, TimeSpan.FromSeconds(5));
+        DeleteFileWithRetry(RollbackServiceBinaryPath, TimeSpan.FromSeconds(5));
 
         if (Directory.Exists(ServiceDirectory))
         {
@@ -618,19 +909,40 @@ public sealed class ServiceLifecycleManager
         try
         {
             RejectReparsePoint(path);
-            var sddl = ReadDaclSddl(path);
-            return sddl.Contains("D:P", StringComparison.Ordinal) &&
-                   sddl.Contains(";;;SY)", StringComparison.Ordinal) &&
-                   sddl.Contains(";;;BA)", StringComparison.Ordinal) &&
-                   !sddl.Contains(";;;WD)", StringComparison.Ordinal) &&
-                   !sddl.Contains(";;;AU)", StringComparison.Ordinal) &&
-                   !sddl.Contains(";;;BU)", StringComparison.Ordinal) &&
-                   !sddl.Contains(";;;IU)", StringComparison.Ordinal);
+            var expectedSddl = Directory.Exists(path) ? DirectorySddl : FileSddl;
+            return DaclMatchesExactly(
+                ReadDaclSddl(path),
+                expectedSddl,
+                requireProtectedDacl: true);
         }
         catch
         {
             return false;
         }
+    }
+
+    private static bool DaclMatchesExactly(
+        string actualSddl,
+        string expectedSddl,
+        bool requireProtectedDacl)
+    {
+        var actual = new RawSecurityDescriptor(actualSddl);
+        var expected = new RawSecurityDescriptor(expectedSddl);
+
+        if (actual.DiscretionaryAcl is null || expected.DiscretionaryAcl is null)
+            return false;
+
+        if (requireProtectedDacl &&
+            (actual.ControlFlags & ControlFlags.DiscretionaryAclProtected) == 0)
+        {
+            return false;
+        }
+
+        var actualBytes = new byte[actual.DiscretionaryAcl.BinaryLength];
+        var expectedBytes = new byte[expected.DiscretionaryAcl.BinaryLength];
+        actual.DiscretionaryAcl.GetBinaryForm(actualBytes, 0);
+        expected.DiscretionaryAcl.GetBinaryForm(expectedBytes, 0);
+        return actualBytes.AsSpan().SequenceEqual(expectedBytes);
     }
 
     private static string ReadDaclSddl(string path)
@@ -654,6 +966,60 @@ public sealed class ServiceLifecycleManager
                     out _))
             {
                 throw new Win32Exception(Marshal.GetLastWin32Error(), $"Could not format ACL for {path}.");
+            }
+
+            try
+            {
+                return Marshal.PtrToStringUni(sddlPointer) ?? string.Empty;
+            }
+            finally
+            {
+                _ = LocalFree(sddlPointer);
+            }
+        }
+        finally
+        {
+            Marshal.FreeHGlobal(buffer);
+        }
+    }
+
+    private static string ReadServiceDaclSddl(SafeServiceHandle service)
+    {
+        _ = QueryServiceObjectSecurity(
+            service,
+            DaclSecurityInformation,
+            IntPtr.Zero,
+            0,
+            out var requiredLength);
+        var error = Marshal.GetLastWin32Error();
+        if (requiredLength == 0 || error != ErrorInsufficientBuffer)
+            throw new Win32Exception(error, "Could not query the SCM service-object ACL size.");
+
+        var buffer = Marshal.AllocHGlobal((int)requiredLength);
+        try
+        {
+            if (!QueryServiceObjectSecurity(
+                    service,
+                    DaclSecurityInformation,
+                    buffer,
+                    requiredLength,
+                    out _))
+            {
+                throw new Win32Exception(
+                    Marshal.GetLastWin32Error(),
+                    "Could not read the SCM service-object ACL.");
+            }
+
+            if (!ConvertSecurityDescriptorToStringSecurityDescriptor(
+                    buffer,
+                    SddlRevision1,
+                    DaclSecurityInformation,
+                    out var sddlPointer,
+                    out _))
+            {
+                throw new Win32Exception(
+                    Marshal.GetLastWin32Error(),
+                    "Could not format the SCM service-object ACL.");
             }
 
             try
@@ -707,8 +1073,13 @@ public sealed class ServiceLifecycleManager
 
             var native = Marshal.PtrToStructure<QueryServiceConfigInfo>(buffer);
             return new ServiceConfiguration(
+                native.ServiceType,
+                native.StartType,
+                native.ErrorControl,
                 Marshal.PtrToStringUni(native.BinaryPathName) ?? string.Empty,
-                native.StartType);
+                ReadMultiString(native.Dependencies),
+                Marshal.PtrToStringUni(native.ServiceStartName) ?? string.Empty,
+                Marshal.PtrToStringUni(native.DisplayName) ?? string.Empty);
         }
         finally
         {
@@ -719,20 +1090,69 @@ public sealed class ServiceLifecycleManager
     private static bool ServicePathMatches(SafeServiceHandle service, string expectedPath)
     {
         var configured = QueryServiceConfiguration(service).BinaryPath.Trim();
-        if (configured.Length >= 2 && configured[0] == '\"' && configured[^1] == '\"')
-            configured = configured[1..^1];
+        return string.Equals(
+            configured,
+            QuoteServiceBinaryPath(Path.GetFullPath(expectedPath)),
+            StringComparison.OrdinalIgnoreCase);
+    }
+
+    private static bool ServiceConfigurationMatches(
+        ServiceConfiguration configuration,
+        string expectedPath)
+    {
+        if (configuration.ServiceType != ServiceWin32OwnProcess ||
+            configuration.StartType != ServiceAutoStart ||
+            configuration.ErrorControl != ServiceErrorNormal ||
+            !string.Equals(configuration.StartName, "LocalSystem", StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(configuration.DisplayName, ServiceProtocol.DisplayName, StringComparison.Ordinal) ||
+            configuration.Dependencies.Count != 1 ||
+            !string.Equals(configuration.Dependencies[0], "BFE", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
 
         try
         {
             return string.Equals(
-                Path.GetFullPath(configured),
-                Path.GetFullPath(expectedPath),
+                configuration.BinaryPath.Trim(),
+                QuoteServiceBinaryPath(Path.GetFullPath(expectedPath)),
                 StringComparison.OrdinalIgnoreCase);
         }
         catch
         {
             return false;
         }
+    }
+
+    private static IReadOnlyList<string> ReadMultiString(IntPtr pointer)
+    {
+        if (pointer == IntPtr.Zero)
+            return Array.Empty<string>();
+
+        const int maxCharacters = 32 * 1024;
+        var values = new List<string>();
+        var offset = 0;
+        while (offset < maxCharacters)
+        {
+            var length = 0;
+            while (offset + length < maxCharacters &&
+                   Marshal.ReadInt16(pointer, (offset + length) * sizeof(char)) != 0)
+            {
+                length++;
+            }
+
+            if (offset + length >= maxCharacters)
+                throw new InvalidDataException("SCM dependency MULTI_SZ is not terminated.");
+            if (length == 0)
+                return values;
+
+            values.Add(Marshal.PtrToStringUni(
+                IntPtr.Add(pointer, offset * sizeof(char)),
+                length) ?? string.Empty);
+            offset += length + 1;
+        }
+
+        throw new InvalidDataException("SCM dependency MULTI_SZ exceeds the supported size.");
     }
 
     private static ServiceStatusProcess QueryServiceStatus(SafeServiceHandle service)
@@ -756,7 +1176,16 @@ public sealed class ServiceLifecycleManager
         _ => $"state-{state}"
     };
 
-    private sealed record ServiceConfiguration(string BinaryPath, uint StartType);
+    private sealed record PayloadUpdateTransaction(byte[]? PreviousHash);
+
+    private sealed record ServiceConfiguration(
+        uint ServiceType,
+        uint StartType,
+        uint ErrorControl,
+        string BinaryPath,
+        IReadOnlyList<string> Dependencies,
+        string StartName,
+        string DisplayName);
 
     private sealed class SafeServiceHandle : SafeHandleZeroOrMinusOneIsInvalid
     {
@@ -917,6 +1346,15 @@ public sealed class ServiceLifecycleManager
         SafeServiceHandle service,
         uint securityInformation,
         IntPtr securityDescriptor);
+
+    [DllImport("advapi32.dll", SetLastError = true)]
+    [return: MarshalAs(UnmanagedType.Bool)]
+    private static extern bool QueryServiceObjectSecurity(
+        SafeServiceHandle service,
+        uint securityInformation,
+        IntPtr securityDescriptor,
+        uint bufferSize,
+        out uint bytesNeeded);
 
     [DllImport("advapi32.dll", SetLastError = true)]
     [return: MarshalAs(UnmanagedType.Bool)]

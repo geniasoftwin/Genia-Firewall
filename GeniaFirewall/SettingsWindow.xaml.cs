@@ -399,15 +399,16 @@ public partial class SettingsWindow : Window
     private void ApplyServiceStatus(ServiceLifecycleStatus status)
     {
         var ready = status.Installed && status.Running && status.BinaryPresent &&
-                    status.ConfigurationValid && status.StorageProtected;
+                    status.PayloadVerified && status.ConfigurationValid &&
+                    status.StorageProtected && status.ServiceObjectProtected;
         ServiceStatusText.Text = IsRussian
             ? ready
-                ? $"Активна · путь и ACL проверены · {status.BinaryPath}"
+                ? $"Активна · EXE, SCM и ACL проверены · {status.BinaryPath}"
                 : status.Installed
                     ? $"Требует внимания · {status.Description}"
                     : "Деактивирована · служба и защищённый EXE отсутствуют"
             : ready
-                ? $"Active · path and ACL verified · {status.BinaryPath}"
+                ? $"Active · EXE, SCM and ACL verified · {status.BinaryPath}"
                 : status.Installed
                     ? $"Needs attention · {status.Description}"
                     : "Deactivated · service and protected EXE are absent";

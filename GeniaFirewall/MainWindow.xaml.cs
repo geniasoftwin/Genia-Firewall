@@ -692,7 +692,10 @@ public partial class MainWindow : Window
             var probe = _serviceClient.Probe(500);
             lastDescription = probe.Description;
             if (probe.Reachable && probe.Status is { } status &&
-                string.Equals(status.ProtocolVersion, GeniaFirewall.Protocol.ServiceProtocol.ProtocolVersion, StringComparison.Ordinal))
+                status.Running &&
+                string.Equals(status.ServiceName, GeniaFirewall.Protocol.ServiceProtocol.ServiceName, StringComparison.Ordinal) &&
+                string.Equals(status.ProtocolVersion, GeniaFirewall.Protocol.ServiceProtocol.ProtocolVersion, StringComparison.Ordinal) &&
+                string.Equals(status.ProductVersion, GeniaFirewall.Protocol.ServiceProtocol.ProductVersion, StringComparison.Ordinal))
             {
                 return;
             }
@@ -705,7 +708,8 @@ public partial class MainWindow : Window
 
     private static bool IsServiceReady(ServiceLifecycleStatus status) =>
         status.Installed && status.Running && status.BinaryPresent &&
-        status.ConfigurationValid && status.StorageProtected;
+        status.PayloadVerified && status.ConfigurationValid && status.StorageProtected &&
+        status.ServiceObjectProtected;
 
     private async Task ToggleTrustedSystemModeAsync()
     {
@@ -3211,8 +3215,8 @@ public partial class MainWindow : Window
         {
             var lifecycle = _serviceLifecycle.GetStatus();
             lines.Add(ru
-                ? $"Жизненный цикл Service: разрешена={(_settings.ServiceEnabled ? yes : no)} · установлена={(lifecycle.Installed ? yes : no)} · запущена={(lifecycle.Running ? yes : no)} · путь={(lifecycle.ConfigurationValid ? "проверен" : "не проверен")} · ACL={(lifecycle.StorageProtected ? "защищён" : "не проверен")}"
-                : $"Service lifecycle: enabled={(_settings.ServiceEnabled ? yes : no)} · installed={(lifecycle.Installed ? yes : no)} · running={(lifecycle.Running ? yes : no)} · path={(lifecycle.ConfigurationValid ? "verified" : "unverified")} · ACL={(lifecycle.StorageProtected ? "protected" : "unverified")}");
+                ? $"Жизненный цикл Service: разрешена={(_settings.ServiceEnabled ? yes : no)} · установлена={(lifecycle.Installed ? yes : no)} · запущена={(lifecycle.Running ? yes : no)} · payload={(lifecycle.PayloadVerified ? "проверен" : "не проверен")} · SCM={(lifecycle.ConfigurationValid ? "проверен" : "не проверен")} · ACL файлов={(lifecycle.StorageProtected ? "защищён" : "не проверен")} · ACL службы={(lifecycle.ServiceObjectProtected ? "защищён" : "не проверен")}"
+                : $"Service lifecycle: enabled={(_settings.ServiceEnabled ? yes : no)} · installed={(lifecycle.Installed ? yes : no)} · running={(lifecycle.Running ? yes : no)} · payload={(lifecycle.PayloadVerified ? "verified" : "unverified")} · SCM={(lifecycle.ConfigurationValid ? "verified" : "unverified")} · file ACL={(lifecycle.StorageProtected ? "protected" : "unverified")} · service ACL={(lifecycle.ServiceObjectProtected ? "protected" : "unverified")}");
             lines.Add((ru ? "Service binary: " : "Service binary: ") + lifecycle.BinaryPath);
         }
         catch (Exception ex)
