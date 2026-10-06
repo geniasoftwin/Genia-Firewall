@@ -54,6 +54,10 @@ GeniaFirewall has no developer analytics or automatic log uploads. Optional reve
 
 The [Code signing policy](CODE_SIGNING_POLICY.md) documents the release process, build provenance, and maintainer roles. Free code signing is planned through SignPath.io with a certificate issued to SignPath Foundation; RC builds remain unsigned until that enrollment and the complete release gate succeed.
 
+## License notices
+
+GeniaFirewall source code is licensed under GPL-3.0-only. The self-contained Windows binary also bundles .NET and Windows components governed by their own terms. See [`NOTICE.md`](NOTICE.md) and [`THIRD_PARTY_NOTICES`](THIRD_PARTY_NOTICES/README.md).
+
 ## Uninstall
 
 Open **Settings → WFP system service**, deactivate the service, and confirm that Windows Firewall Compatibility is active. Exit GeniaFirewall, then delete the portable directory. The `Data` directory contains the portable rules, settings, backups, and UI logs; removing it deletes that local user state.
