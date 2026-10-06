@@ -923,6 +923,10 @@ public partial class MainWindow : Window
 
     private async Task SetAccessAsync(ManagedApplication application, FirewallAccess access, ApplicationRuleProfile ruleProfile = ApplicationRuleProfile.Default)
     {
+        var effectiveRuleProfile = ruleProfile == ApplicationRuleProfile.Default
+            ? GetCanonicalRuleProfile(access)
+            : ruleProfile;
+
         var previousAccess = application.Access;
         var previousRuleProfile = application.RuleProfile;
         var previousChanged = application.FingerprintChanged;
@@ -940,7 +944,7 @@ public partial class MainWindow : Window
 
         application.FingerprintChanged = false;
         application.Access = access;
-        application.RuleProfile = ruleProfile;
+        application.RuleProfile = effectiveRuleProfile;
         application.IsTrustedSystem = false;
         application.TrustReason = string.Empty;
         application.SuppressPromptNotifications = false;
@@ -953,9 +957,7 @@ public partial class MainWindow : Window
             await PersistAsync();
             RefreshHandledPaths();
             RefreshList();
-            SetStatus(ruleProfile == ApplicationRuleProfile.Default
-                ? $"{application.Name}: {GetAccessActionResult(access)}."
-                : $"{application.Name}: {application.RuleProfileLabel}.");
+            SetStatus($"{application.Name}: {application.RuleProfileLabel}.");
         }
         catch (Exception ex)
         {
@@ -1860,6 +1862,7 @@ public partial class MainWindow : Window
                 var application = FindApplication(connection.ExePath);
                 var createdApplication = application is null;
                 var previousAccess = application?.Access ?? FirewallAccess.Ask;
+                var previousRuleProfile = application?.RuleProfile ?? ApplicationRuleProfile.Ask;
                 var previousChanged = application?.FingerprintChanged ?? false;
                 var previousUntil = application?.TemporaryAllowUntilUtc;
                 var previousProcessId = application?.TemporaryAllowProcessId ?? 0;
@@ -1878,7 +1881,7 @@ public partial class MainWindow : Window
                     // The user's decision acknowledges the executable that exists right now.
                     await CaptureFingerprintBaselineAsync(application);
                     application.Access = access;
-                    application.RuleProfile = ApplicationRuleProfile.Default;
+                    application.RuleProfile = GetCanonicalRuleProfile(access);
                     application.FingerprintChanged = false;
                 }
 
@@ -1920,6 +1923,7 @@ public partial class MainWindow : Window
                     else
                     {
                         application.Access = previousAccess;
+                        application.RuleProfile = previousRuleProfile;
                         application.FingerprintChanged = previousChanged;
                         application.TemporaryAllowUntilUtc = previousUntil;
                         application.TemporaryAllowProcessId = previousProcessId;
@@ -2096,6 +2100,13 @@ public partial class MainWindow : Window
         return result.Length <= maxLength ? result : result[..maxLength];
     }
 
+    private static ApplicationRuleProfile GetCanonicalRuleProfile(FirewallAccess access) => access switch
+    {
+        FirewallAccess.Allow => ApplicationRuleProfile.EnableAll,
+        FirewallAccess.Block => ApplicationRuleProfile.DisableAll,
+        _ => ApplicationRuleProfile.Ask
+    };
+
     private ManagedApplication CreateApplication(string exePath, FirewallAccess access)
     {
         var name = Path.GetFileNameWithoutExtension(exePath);
@@ -2121,6 +2132,7 @@ public partial class MainWindow : Window
             Name = name,
             ExePath = exePath,
             Access = access,
+            RuleProfile = GetCanonicalRuleProfile(access),
             IconSource = ExecutableMetadataService.TryLoadIcon(exePath)
         };
 
@@ -2201,7 +2213,10 @@ public partial class MainWindow : Window
         var application = SelectedApplication;
         var hasSelection = application is not null;
 
-        ContextAllowItem.Visibility = hasSelection && (application!.Access != FirewallAccess.Allow || application.IsTemporaryAllow)
+        ContextAllowItem.Visibility = hasSelection &&
+            (application!.Access != FirewallAccess.Allow ||
+             application.IsTemporaryAllow ||
+             application.RuleProfile != ApplicationRuleProfile.EnableAll)
             ? Visibility.Visible
             : Visibility.Collapsed;
 
@@ -2350,7 +2365,7 @@ public partial class MainWindow : Window
         {
             await CaptureFingerprintBaselineAsync(application);
             application.Access = FirewallAccess.Allow;
-            application.RuleProfile = ApplicationRuleProfile.Default;
+            application.RuleProfile = ApplicationRuleProfile.EnableAll;
             application.FingerprintChanged = false;
             application.IsTrustedSystem = false;
             application.TrustReason = string.Empty;
@@ -3313,7 +3328,7 @@ public partial class MainWindow : Window
             ? $"Не напоминать: {Applications.Count(app => app.Access == FirewallAccess.Ask && app.SuppressPromptNotifications)} приложений"
             : $"Do not remind: {Applications.Count(app => app.Access == FirewallAccess.Ask && app.SuppressPromptNotifications)} applications");
         lines.Add(ru
-            ? $"Quick Rules: EnableAll={Applications.Count(app => app.RuleProfile == ApplicationRuleProfile.EnableAll)} · OutgoingOnly={Applications.Count(app => app.RuleProfile == ApplicationRuleProfile.OutgoingOnly)} · IncomingOnly={Applications.Count(app => app.RuleProfile == ApplicationRuleProfile.IncomingOnly)} · DisableAll={Applications.Count(app => app.RuleProfile == ApplicationRuleProfile.DisableAll)} · Ask={Applications.Count(app => app.RuleProfile == ApplicationRuleProfile.Ask)}"
+            ? $"Quick Rules: EnableAll={Applications.Count(app => app.RuleProfile == ApplicationRuleProfile.EnableAll)} · OutgoingOnly={Applications.Count(app => app.RuleProfile == ApplicationRuleProfile.OutgoingOnly)} · IncomingOnly={Applications.Count(app => app.RuleProfile == ApplicationRuleProfile.IncomingOnly)} · DisableAll={Applications.Count(app => app.RuleProfile == ApplicationRuleProfile.DisableAll)} · Ask={Applications.Count(app => app.RuleProfile == ApplicationRuleProfile.Ask)} · Default={Applications.Count(app => app.RuleProfile == ApplicationRuleProfile.Default)}"
             : $"Quick Rules: EnableAll={Applications.Count(app => app.RuleProfile == ApplicationRuleProfile.EnableAll)} · OutgoingOnly={Applications.Count(app => app.RuleProfile == ApplicationRuleProfile.OutgoingOnly)} · IncomingOnly={Applications.Count(app => app.RuleProfile == ApplicationRuleProfile.IncomingOnly)} · DisableAll={Applications.Count(app => app.RuleProfile == ApplicationRuleProfile.DisableAll)} · Ask={Applications.Count(app => app.RuleProfile == ApplicationRuleProfile.Ask)}");
         lines.Add(ru
             ? $"Язык: {_settings.UiLanguage} → {LocalizationService.EffectiveLanguage}"
