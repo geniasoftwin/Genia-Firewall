@@ -48,4 +48,14 @@ This RC is not Authenticode-signed. SHA-256 verifies extraction integrity but do
 
 Do not publish suspected vulnerabilities in a public issue. Use the repository's private security-advisory channel; see `SECURITY.md`.
 
+## Privacy and code signing
+
+GeniaFirewall has no developer analytics or automatic log uploads. Optional reverse DNS uses the resolver configured in Windows and can be disabled. See [`PRIVACY.md`](PRIVACY.md) for the complete runtime data policy.
+
+The [Code signing policy](CODE_SIGNING_POLICY.md) documents the release process, build provenance, and maintainer roles. Free code signing is planned through SignPath.io with a certificate issued to SignPath Foundation; RC builds remain unsigned until that enrollment and the complete release gate succeed.
+
+## Uninstall
+
+Open **Settings → WFP system service**, deactivate the service, and confirm that Windows Firewall Compatibility is active. Exit GeniaFirewall, then delete the portable directory. The `Data` directory contains the portable rules, settings, backups, and UI logs; removing it deletes that local user state.
+
 A true kernel pre-connect prompt is not implemented; holding the first connect requires a WFP callout driver.
