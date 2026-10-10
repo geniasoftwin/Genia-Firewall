@@ -11,9 +11,9 @@
 
 GeniaFirewall is built for people who want to see which applications use the network and decide what each application may do. The standalone WFP backend supports inbound and outbound policy, LAN/TUN-aware enforcement, diagnostics, and a portable WPF/.NET 10 interface.
 
-![GeniaFirewall overview](docs/images/geniafirewall-overview-bilingual.jpg)
+![GeniaFirewall 0.7.4 RC3 main window — real UI with redacted network data](docs/images/01-main-window.png)
 
-> The image above is an anonymized product overview. It is intended to explain the interface and capabilities, not to represent a specific computer, user, network, or exact build.
+> **Real screenshot of 0.7.4 RC3 (test build), not 0.7.3 Stable.** Some network endpoints and paths are demonstration replacements; the application list and statuses reflect the test PC. [More real screenshots: Settings tabs, diagnostics and access prompt](docs/SCREENSHOTS.md).
 
 ## Why GeniaFirewall?
 
@@ -133,9 +133,9 @@ GeniaFirewall does not contain developer analytics and does not automatically up
 | [Security model](docs/SECURITY_MODEL.md) | Privilege boundaries, cleanup, signing |
 | [FAQ](docs/FAQ.md) | Common setup and firewall questions |
 | [Troubleshooting](docs/TROUBLESHOOTING.md) | WFP BLOCK and connection diagnosis |
-| [Screenshot plan](docs/SCREENSHOTS.md) | How to contribute privacy-safe **real** UI captures |
+| [RC3 screenshot gallery](docs/SCREENSHOTS.md) | Real UI captures: main window, 3 tabs, access prompt and anonymization notes |
 
-> Actual product screenshots are being prepared. The overview image above is illustrative and anonymized, not a specific-build screenshot.
+> The gallery contains genuine RC3 testing screenshots with selective redactions. The [separate stylized project overview](docs/images/geniafirewall-overview-bilingual.jpg) is an illustration, not a screenshot.
 
 ## Project documents
 
