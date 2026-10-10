@@ -6,7 +6,7 @@ public static class ServiceProtocol
     public const string DisplayName = "GeniaFirewall Service";
     public const string PipeName = "GeniaFirewall.Service.v13";
     public const string ProtocolVersion = "13";
-    public const string ProductVersion = "0.7.3.4";
+    public const string ProductVersion = "0.7.4.0";
     public const int MaxPolicyApplications = 5000;
     public const int MaxRequestCharacters = 2 * 1024 * 1024;
     public const int MaxTelemetryEventsPerResponse = 256;

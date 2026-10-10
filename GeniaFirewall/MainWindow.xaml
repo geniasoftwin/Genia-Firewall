@@ -10,6 +10,7 @@
     <Grid>
         <Grid.RowDefinitions>
             <RowDefinition Height="48" />
+            <RowDefinition Height="Auto" />
             <RowDefinition Height="*" />
             <RowDefinition Height="26" />
         </Grid.RowDefinitions>
@@ -39,7 +40,7 @@
                     <Image Source="Assets/geniafirewall.png" Width="22" Height="22" Stretch="Uniform" />
                     <TextBlock Text="GeniaFirewall" FontSize="14" FontWeight="SemiBold" Margin="7,0,0,0" VerticalAlignment="Center" />
                     <Border Background="#EEEAFE" CornerRadius="5" Padding="5,2" Margin="6,0,0,0">
-                        <TextBlock Text="0.7.3" Foreground="{StaticResource AccentBrush}" FontSize="9.5" FontWeight="SemiBold" />
+                        <TextBlock Text="0.7.4 RC3" Foreground="{StaticResource AccentBrush}" FontSize="9.5" FontWeight="SemiBold" />
                     </Border>
                 </StackPanel>
 
@@ -79,8 +80,39 @@
             </Grid>
         </Border>
 
+        <!-- Effective global policy notice. Stored per-app rules remain unchanged. -->
+        <Border Grid.Row="1"
+                Margin="8,8,8,0"
+                Padding="10,7"
+                Background="#FFF1F2"
+                BorderBrush="{StaticResource BlockedBrush}"
+                BorderThickness="1"
+                CornerRadius="5">
+            <Border.Style>
+                <Style TargetType="Border">
+                    <Setter Property="Visibility" Value="Collapsed" />
+                    <Style.Triggers>
+                        <DataTrigger Binding="{Binding IsBlockAllEffective, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="True">
+                            <Setter Property="Visibility" Value="Visible" />
+                        </DataTrigger>
+                    </Style.Triggers>
+                </Style>
+            </Border.Style>
+            <StackPanel>
+                <TextBlock Text="{DynamicResource Main.BlockAllActive.Title}"
+                           Foreground="{StaticResource BlockedBrush}"
+                           FontSize="11.5"
+                           FontWeight="SemiBold" />
+                <TextBlock Text="{DynamicResource Main.BlockAllActive.Message}"
+                           Margin="0,2,0,0"
+                           Foreground="{StaticResource MutedTextBrush}"
+                           FontSize="10"
+                           TextWrapping="Wrap" />
+            </StackPanel>
+        </Border>
+
         <!-- Programs table: stable vertical scrollbar, no horizontal scrollbar -->
-        <Border Grid.Row="1" Margin="8" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="5">
+        <Border Grid.Row="2" Margin="8" Background="{StaticResource SurfaceBrush}" BorderBrush="{StaticResource BorderBrush}" BorderThickness="1" CornerRadius="5">
             <Grid>
                 <ListView x:Name="ApplicationsList"
                           ItemsSource="{Binding Applications}"
@@ -194,9 +226,14 @@
                                 </GridViewColumn.Header>
                                 <GridViewColumn.CellTemplate>
                                     <DataTemplate>
-                                        <TextBlock Text="{Binding AccessLabel}" FontSize="11" VerticalAlignment="Center" HorizontalAlignment="Stretch" TextAlignment="Center">
+                                        <TextBlock FontSize="11"
+                                                   VerticalAlignment="Center"
+                                                   HorizontalAlignment="Stretch"
+                                                   TextAlignment="Center"
+                                                   TextWrapping="Wrap">
                                             <TextBlock.Style>
                                                 <Style TargetType="TextBlock">
+                                                    <Setter Property="Text" Value="{Binding AccessLabel}" />
                                                     <Setter Property="Foreground" Value="{StaticResource AskBrush}" />
                                                     <Style.Triggers>
                                                         <DataTrigger Binding="{Binding Access}" Value="Allow">
@@ -207,6 +244,12 @@
                                                         </DataTrigger>
                                                         <DataTrigger Binding="{Binding FingerprintChanged}" Value="True">
                                                             <Setter Property="Foreground" Value="{StaticResource AskBrush}" />
+                                                            <Setter Property="FontWeight" Value="SemiBold" />
+                                                        </DataTrigger>
+                                                        <DataTrigger Binding="{Binding IsBlockAllEffective, RelativeSource={RelativeSource AncestorType={x:Type Window}}}" Value="True">
+                                                            <Setter Property="Text" Value="{DynamicResource Access.BlockedByBlockAll}" />
+                                                            <Setter Property="ToolTip" Value="{DynamicResource Access.BlockedByBlockAllHint}" />
+                                                            <Setter Property="Foreground" Value="{StaticResource BlockedBrush}" />
                                                             <Setter Property="FontWeight" Value="SemiBold" />
                                                         </DataTrigger>
                                                     </Style.Triggers>
@@ -288,7 +331,7 @@
         </Border>
 
         <!-- Status bar -->
-        <Border Grid.Row="2" Background="#F2F1F6" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0">
+        <Border Grid.Row="3" Background="#F2F1F6" BorderBrush="{StaticResource BorderBrush}" BorderThickness="0,1,0,0">
             <Grid Margin="9,0">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="*" />

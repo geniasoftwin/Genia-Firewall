@@ -1,34 +1,65 @@
-# GeniaFirewall 0.7.3 Stable
+# GeniaFirewall 0.7.4 RC2
 
 Licensed under GPL-3.0-only. See `LICENSE`.
 
-Stable Windows 10/11 portable application firewall built with WPF/.NET 10 and a standalone WFP backend hosted by `GeniaFirewall.Service`.
+Portable Windows 10/11 application firewall built with WPF/.NET 10 and a standalone WFP backend. Version 0.7.4 RC2 hardens the **Single-EXE Portable** lifecycle with transactional service updates and complete SCM verification before a Stable release.
 
-The final release promotes the Windows-accepted RC1 without policy or WFP logic changes. It keeps the dynamic-session lifecycle verification, TUN-aware physical boundary policy, interface-independent application rules, narrow GeniaProxy readiness permits, and the `PROBE > APP > GLOBAL` weight plan.
+## One user-facing executable
 
-Stability hardening:
-
-- correct network-byte-order decoding of IPv4 WFP telemetry;
-- UTC timestamp on the last observed BLOCK event;
-- readable `not-found (ok)` startup cleanup results;
-- a bounded IPC request-read timeout;
-- redaction of executable paths, endpoints and internal errors from unprivileged status responses;
-- fail-closed portable packaging with published EXE version checks and SHA-256 output.
-
-Run `publish-portable.cmd`. Output:
+The portable archive contains only:
 
 ```text
-publish\GeniaFirewall-0.7.3-Stable-win-x64\
-publish\GeniaFirewall-0.7.3-Stable-Portable-win-x64.zip
-publish\GeniaFirewall-0.7.3-Stable-SHA256.txt
+GeniaFirewall.exe
 ```
 
-Version: UI / Service / Protocol `0.7.3.4`, IPC v13, pipe `GeniaFirewall.Service.v13`.
+On first launch, after UAC consent, the UI extracts its embedded service into `%ProgramFiles%\GeniaFirewall\Service`, verifies the payload with SHA-256, restricts the directory, binary, and SCM service object to `SYSTEM` and local Administrators, and verifies the complete SCM configuration plus service IPC identity.
 
-Run `install-service.cmd` as Administrator from the published directory. The installer copies the privileged service binary to `%ProgramFiles%\GeniaFirewall\Service` and restricts its ACL to `SYSTEM` and local Administrators; the UI remains portable.
+Updates retain the previous protected service as `.previous` until the new payload passes SHA-256, SCM, ACL, startup, and IPC checks. A failed update restores and re-verifies the previous payload.
+
+Settings provide explicit service activation and deactivation. Safe deactivation verifies an empty WFP runtime, synchronizes Windows Firewall Compatibility, then stops and removes the service and protected binary.
+
+After launch, only the portable `Data` directory is created beside the EXE. It holds user settings, application rules, backups, and UI logs.
+
+## Build
+
+Run on Windows with the .NET 10 SDK:
+
+```cmd
+publish-portable.cmd
+```
+
+Output:
+
+```text
+publish\GeniaFirewall-0.7.4-RC2-win-x64\GeniaFirewall.exe
+publish\GeniaFirewall-0.7.4-RC2-SingleExe-Portable-win-x64.zip
+publish\GeniaFirewall-0.7.4-RC2-SHA256.txt
+```
+
+The build fails closed on version mismatch, missing embedded service payload, unexpected portable output files, packaging failure, or SHA-256 failure.
+
+Version: UI / Service / Protocol `0.7.4.0`, IPC v13, pipe `GeniaFirewall.Service.v13`.
 
 ## Security
 
-Do not publish suspected vulnerabilities in a public issue. Use the repository's private security-advisory channel. See `SECURITY.md` for the supported version and reporting guidance.
+The service executable and service-owned state under Program Files and ProgramData reject reparse points and use exact protected ACLs. SCM verification covers the quoted path, own-process type, LocalSystem account, automatic start, normal error control, BFE dependency, display name, and service-object DACL. Compatibility startup removes persisted WFP policy before service start and then verifies an empty runtime through IPC.
+
+This RC is not Authenticode-signed. SHA-256 verifies extraction integrity but does not establish publisher identity; both the embedded service and UI must be signed before a public Stable release.
+
+Do not publish suspected vulnerabilities in a public issue. Use the repository's private security-advisory channel; see `SECURITY.md`.
+
+## Privacy and code signing
+
+GeniaFirewall has no developer analytics or automatic log uploads. Optional reverse DNS uses the resolver configured in Windows and can be disabled. See [`PRIVACY.md`](PRIVACY.md) for the complete runtime data policy.
+
+The [Code signing policy](CODE_SIGNING_POLICY.md) documents the release process, build provenance, and maintainer roles. Free code signing is planned through SignPath.io with a certificate issued to SignPath Foundation; RC builds remain unsigned until that enrollment and the complete release gate succeed.
+
+## License notices
+
+GeniaFirewall source code is licensed under GPL-3.0-only. The self-contained Windows binary also bundles .NET and Windows components governed by their own terms. See [`NOTICE.md`](NOTICE.md) and [`THIRD_PARTY_NOTICES`](THIRD_PARTY_NOTICES/README.md).
+
+## Uninstall
+
+Open **Settings → WFP system service**, deactivate the service, and confirm that Windows Firewall Compatibility is active. Exit GeniaFirewall, then delete the portable directory. The `Data` directory contains the portable rules, settings, backups, and UI logs; removing it deletes that local user state.
 
 A true kernel pre-connect prompt is not implemented; holding the first connect requires a WFP callout driver.

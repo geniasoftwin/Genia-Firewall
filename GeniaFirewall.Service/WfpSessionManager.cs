@@ -370,10 +370,8 @@ internal sealed class WfpSessionManager : IDisposable
             }
             else if (enforce && policy.Mode == WfpPolicyMode.BlockAll)
             {
-                // Only directional permits are needed above the catch-all blocks.
-                foreach (var rule in rules.Where(rule => rule.Access == WfpRuleAccess.Allow))
-                    AddApplicationProfileFilters(rule, WfpPolicyMode.BlockAll, newFilterIds, ref ipv4, ref ipv6, ref tcp, ref udp, ref outbound, ref inbound);
-
+                // Absolute kill switch: no application rule, readiness probe, or loopback
+                // exception may outrank these catch-all blocks while BlockAll is active.
                 AddGlobalOutboundBlockFilters(newFilterIds, ref ipv4, ref ipv6, ref tcp, ref udp, ref outbound);
                 globalInboundBlocks = AddGlobalInboundBlockFilters(
                     newFilterIds, ref ipv4, ref ipv6, ref tcp, ref udp, ref inbound,
@@ -382,6 +380,9 @@ internal sealed class WfpSessionManager : IDisposable
                     failSafeFallback: true,
                     reason: "BLOCK_ALL");
                 globalOutboundBlocks = 4;
+
+                if (newFilterIds.Count != 8 || globalOutboundBlocks != 4 || globalInboundBlocks != 4)
+                    throw new InvalidOperationException("BlockAll must contain exactly eight global TCP/UDP IPv4/IPv6 filters and no application exceptions.");
             }
             // AllowAll and disabled protection intentionally install no enforcing filters.
 
@@ -425,7 +426,9 @@ internal sealed class WfpSessionManager : IDisposable
             _backendActive = policy.BackendActive;
             _protectionEnabled = policy.ProtectionEnabled;
             _policyMode = policy.Mode;
-            _policyRestoredOnStartup = restoredOnStartup;
+            // Keep boot-restore evidence visible after later UI synchronizations and
+            // interface-change refreshes. Closing the WFP session resets the flag.
+            _policyRestoredOnStartup |= restoredOnStartup;
             _allowedApplicationCount = rules.Count(rule => rule.Access == WfpRuleAccess.Allow);
             _blockedApplicationCount = rules.Count(rule => rule.Access == WfpRuleAccess.Block);
             _pendingApplicationCount = rules.Count(rule => rule.Access == WfpRuleAccess.Ask);
@@ -518,6 +521,9 @@ internal sealed class WfpSessionManager : IDisposable
         ref int outbound,
         ref int inbound)
     {
+        if (mode != WfpPolicyMode.Normal && mode != WfpPolicyMode.Monitor)
+            throw new InvalidOperationException($"Application filters are not valid in {mode} mode.");
+
         IntPtr appId = IntPtr.Zero;
         var result = FwpmGetAppIdFromFileName0(rule.ExePath, out appId);
         if (result != 0 || appId == IntPtr.Zero)
@@ -535,28 +541,6 @@ internal sealed class WfpSessionManager : IDisposable
                 IsGeniaProxyExecutable(rule.ExePath))
             {
                 AddGeniaProxyReadinessProbeFilters(rule, appId, newFilterIds, ref ipv4, ref udp, ref outbound);
-            }
-
-            if (mode == WfpPolicyMode.BlockAll)
-            {
-                // Catch-all BLOCK is installed separately. Only application permits are required here.
-                if (profile is WfpRuleProfile.EnableAll or WfpRuleProfile.OutgoingOnly)
-                    AddApplicationDirectionFilters(rule, appId, TrafficDirection.Outbound, FwpActionPermit, newFilterIds, ref ipv4, ref ipv6, ref tcp, ref udp, ref outbound, ref inbound);
-                if (profile is WfpRuleProfile.EnableAll or WfpRuleProfile.IncomingOnly)
-                    AddApplicationDirectionFilters(rule, appId, TrafficDirection.Inbound, FwpActionPermit, newFilterIds, ref ipv4, ref ipv6, ref tcp, ref udp, ref outbound, ref inbound);
-
-                // In BlockAll the global catch-all filters also match loopback. Preserve the
-                // directional profile contract by explicitly permitting localhost in the
-                // otherwise blocked direction for OutgoingOnly/IncomingOnly.
-                if (profile == WfpRuleProfile.OutgoingOnly)
-                {
-                    AddApplicationDirectionFilters(rule, appId, TrafficDirection.Inbound, FwpActionPermit, newFilterIds, ref ipv4, ref ipv6, ref tcp, ref udp, ref outbound, ref inbound, loopbackOnly: true);
-                }
-                if (profile == WfpRuleProfile.IncomingOnly)
-                {
-                    AddApplicationDirectionFilters(rule, appId, TrafficDirection.Outbound, FwpActionPermit, newFilterIds, ref ipv4, ref ipv6, ref tcp, ref udp, ref outbound, ref inbound, loopbackOnly: true);
-                }
-                return;
             }
 
             if (mode == WfpPolicyMode.Normal)
