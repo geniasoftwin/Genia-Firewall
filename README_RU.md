@@ -123,6 +123,20 @@ TCP / UDP · IPv4 / IPv6 · Internet / LAN / TUN
 
 GeniaFirewall не содержит developer analytics и не отправляет журналы автоматически. Необязательный reverse DNS использует resolver Windows. Подробнее: [PRIVACY.md](PRIVACY.md).
 
+## Руководства
+
+| Руководство | Для чего |
+| --- | --- |
+| [Установка и удаление](docs/INSTALLATION_RU.md) | **Отдельные процедуры для 0.7.3 Stable и 0.7.4 RC**, UAC и проверки |
+| [Как работает WFP](docs/WFP_RU.md) | Архитектура службы и Windows Filtering Platform |
+| [VPN / TUN / LAN](docs/VPN_TUN_RU.md) | Тесты, интерфейсы и ограничения |
+| [Модель безопасности](docs/SECURITY_MODEL_RU.md) | Границы привилегий, cleanup, подпись |
+| [FAQ](docs/FAQ_RU.md) | Частые вопросы |
+| [Диагностика](docs/TROUBLESHOOTING_RU.md) | WFP BLOCK и сетевые проблемы |
+| [План скриншотов](docs/SCREENSHOTS.md) | Требования к обезличенным **реальным** снимкам |
+
+> Настоящие скриншоты готовятся отдельно. Обзорная картинка выше — иллюстрация, а не снимок конкретной сборки.
+
 ## Документы проекта
 
 - [Участие в разработке](CONTRIBUTING_RU.md)
@@ -132,7 +146,7 @@ GeniaFirewall не содержит developer analytics и не отправля
 - [Security policy](SECURITY.md)
 - [Privacy policy](PRIVACY.md)
 - [Code signing policy](CODE_SIGNING_POLICY.md)
-- [Third-party notices](THIRD_PARTY_NOTICES/README.md)
+- [Лицензионные уведомления](NOTICE.md)
 
 ## Лицензия
 

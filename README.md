@@ -123,6 +123,20 @@ For security vulnerabilities, **do not open a public issue**. Follow [SECURITY.m
 
 GeniaFirewall does not contain developer analytics and does not automatically upload logs. Optional reverse DNS uses the resolver configured in Windows. See [PRIVACY.md](PRIVACY.md).
 
+## User guides
+
+| Guide | Purpose |
+| --- | --- |
+| [Install and uninstall](docs/INSTALLATION.md) | **Separate 0.7.3 Stable vs 0.7.4 RC service procedures**, UAC, checks |
+| [WFP explained](docs/WFP.md) | How service and Windows Filtering Platform enforce policies |
+| [VPN / TUN / LAN](docs/VPN_TUN.md) | Test matrix, network interface scope, limitations |
+| [Security model](docs/SECURITY_MODEL.md) | Privilege boundaries, cleanup, signing |
+| [FAQ](docs/FAQ.md) | Common setup and firewall questions |
+| [Troubleshooting](docs/TROUBLESHOOTING.md) | WFP BLOCK and connection diagnosis |
+| [Screenshot plan](docs/SCREENSHOTS.md) | How to contribute privacy-safe **real** UI captures |
+
+> Actual product screenshots are being prepared. The overview image above is illustrative and anonymized, not a specific-build screenshot.
+
 ## Project documents
 
 - [Contributing](CONTRIBUTING.md)
@@ -132,7 +146,7 @@ GeniaFirewall does not contain developer analytics and does not automatically up
 - [Security policy](SECURITY.md)
 - [Privacy policy](PRIVACY.md)
 - [Code signing policy](CODE_SIGNING_POLICY.md)
-- [Third-party notices](THIRD_PARTY_NOTICES/README.md)
+- [License notices](NOTICE.md)
 
 ## License
 
