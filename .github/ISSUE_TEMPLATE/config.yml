@@ -3,3 +3,6 @@ contact_links:
   - name: Security vulnerability
     url: https://github.com/geniasoftwin/Genia-Firewall/security/advisories/new
     about: Report vulnerabilities privately; do not open a public issue.
+  - name: Testing guide
+    url: https://github.com/geniasoftwin/Genia-Firewall/blob/main/TESTING.md
+    about: Read the public smoke-test and compatibility guidance before reporting a test result.
