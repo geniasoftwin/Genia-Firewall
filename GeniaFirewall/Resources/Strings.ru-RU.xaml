@@ -145,4 +145,7 @@
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Tray.Exit">Выход</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Tray.Running">GeniaFirewall продолжает работать в трее.</sys:String>
     <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Tray.Detected">Обнаружено новое приложение</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Tab.General">Общие</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Tab.Firewall">Защита</sys:String>
+    <sys:String xmlns:sys="clr-namespace:System;assembly=System.Runtime" x:Key="Settings.Tab.Diagnostics">Диагностика</sys:String>
 </ResourceDictionary>
