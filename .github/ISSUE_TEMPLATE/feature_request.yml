@@ -1,0 +1,41 @@
+name: Feature request
+description: Suggest an improvement to GeniaFirewall
+title: "[Feature] "
+labels: [enhancement]
+body:
+  - type: markdown
+    attributes:
+      value: Please describe the user problem first. Security-sensitive ideas may need a threat-model discussion before implementation.
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What is difficult or missing today?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed behavior
+      description: What should GeniaFirewall do?
+    validations:
+      required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - WFP policy
+        - Windows Firewall Compatibility
+        - UI / UX
+        - Service lifecycle
+        - VPN / TUN compatibility
+        - Diagnostics
+        - Packaging / release
+        - Documentation / localization
+        - Other
+  - type: textarea
+    id: security
+    attributes:
+      label: Security / compatibility considerations
+      description: Optional. Note any expected impact on fail-open/fail-closed behavior, privileges, LAN, VPN/TUN, or Windows versions.

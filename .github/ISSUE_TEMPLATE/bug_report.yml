@@ -5,19 +5,22 @@ labels: [bug]
 body:
   - type: markdown
     attributes:
-      value: Do not report security vulnerabilities here. Use the private process in SECURITY.md.
+      value: |
+        Thank you for testing GeniaFirewall.
+        Do not report security vulnerabilities here. Use the private process in SECURITY.md.
+        Remove credentials, personal paths, usernames, and unrelated private network data.
   - type: input
     id: version
     attributes:
       label: GeniaFirewall version
-      placeholder: 0.7.3.4
+      placeholder: 0.7.4 RC3
     validations:
       required: true
   - type: input
     id: windows
     attributes:
       label: Windows version
-      placeholder: Windows 11 24H2
+      placeholder: Windows 11 24H2 x64
     validations:
       required: true
   - type: dropdown
@@ -29,11 +32,27 @@ body:
         - Windows Firewall Compatibility
     validations:
       required: true
+  - type: dropdown
+    id: mode
+    attributes:
+      label: Global mode
+      options:
+        - Normal
+        - Monitor
+        - Allow all
+        - Block all
+    validations:
+      required: true
+  - type: input
+    id: app_profile
+    attributes:
+      label: Application rule/profile
+      placeholder: Allow all / Outgoing only / Incoming only / Ask / Block
   - type: textarea
     id: steps
     attributes:
       label: Reproduction steps
-      description: Remove credentials, personal paths, IPs, and unrelated logs.
+      description: Keep the steps minimal and reproducible.
     validations:
       required: true
   - type: textarea
@@ -48,3 +67,9 @@ body:
       label: Actual behavior
     validations:
       required: true
+  - type: textarea
+    id: diagnostics
+    attributes:
+      label: Relevant diagnostics
+      description: Paste only the relevant redacted lines around the failure.
+      render: text
