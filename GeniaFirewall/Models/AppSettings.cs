@@ -16,6 +16,7 @@ public sealed class AppSettings
     public bool ImmediateQuarantineOnForget { get; set; } = true;
     public UiLanguage UiLanguage { get; set; } = UiLanguage.Auto;
     public List<RuntimeQuarantineEntry> RuntimeQuarantines { get; set; } = [];
+    public bool ServiceEnabled { get; set; } = true;
     public FirewallBackendMode BackendMode { get; set; } = FirewallBackendMode.WindowsFirewallCompatibility;
 
     // Window state is optional so settings from older builds remain compatible.

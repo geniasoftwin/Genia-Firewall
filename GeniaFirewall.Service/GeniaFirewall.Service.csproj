@@ -8,9 +8,9 @@
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <AssemblyName>GeniaFirewall.Service</AssemblyName>
     <RootNamespace>GeniaFirewall.Service</RootNamespace>
-    <Version>0.7.3.4</Version>
-    <AssemblyVersion>0.7.3.4</AssemblyVersion>
-    <FileVersion>0.7.3.4</FileVersion>
+    <Version>0.7.4.0</Version>
+    <AssemblyVersion>0.7.4.0</AssemblyVersion>
+    <FileVersion>0.7.4.0</FileVersion>
     <Authors>GeniaFirewall</Authors>
     <Product>GeniaFirewall</Product>
     <Description>GeniaFirewall privileged Windows service and WFP policy host.</Description>
