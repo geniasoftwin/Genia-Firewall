@@ -1,38 +1,17 @@
-# Code signing policy
+# Code signing policy / Политика подписи
 
-Free code signing provided by [SignPath.io](https://signpath.io/), certificate by [SignPath Foundation](https://signpath.org/).
+## Current status (English)
 
-## Scope
+0.7.4 RC builds are **testing artifacts**, not a signed Stable release by default. A public 0.7.4 Stable promotion requires successful CI/CodeQL, Windows 10/11 compatibility testing, and Authenticode signing of both the privileged service and the UI. The planned signing path is through SignPath Foundation, subject to enrollment and approval.
 
-Official GeniaFirewall releases may sign only Windows PE files built from this repository:
+Proposed signed single-EXE flow: build reviewed service → sign service → embed signed payload in UI → sign UI → verify both signatures/timestamps → publish SHA-256 **after signing**.
 
-- `GeniaFirewall.Service.exe`, the privileged WFP policy service;
-- `GeniaFirewall.exe`, the portable UI containing the already signed Service payload.
+A SHA-256 checksum establishes consistency against a published hash, **not the identity of the publisher**. Signing secrets and private keys must never be committed.
 
-No third-party or manually supplied executable is signed as a GeniaFirewall artifact.
+## Текущий статус (Русский)
 
-## Build and release provenance
+0.7.4 RC — **тестовые артефакты**, а не гарантированно подписанный Stable. Для 0.7.4 Stable нужны зелёные CI/CodeQL, тесты на Windows 10/11 и Authenticode-подпись **службы и UI**. Планируемый путь — SignPath Foundation после допуска проекта.
 
-- Production signing is allowed only for a release commit reachable from `main` and identified by a release tag.
-- The Service is built first on a GitHub-hosted Windows runner and submitted to SignPath with verified build origin.
-- The signed Service is embedded into a fresh UI publish; the resulting UI is then submitted as a second signing request.
-- The final portable ZIP contains only the signed `GeniaFirewall.exe`.
-- SHA-256 is calculated after all signatures are applied and is published with the release.
-- Both PE signatures and their timestamp chains must be verified before publication.
+Предполагаемая последовательность для single-EXE: сборка проверенной службы → подпись службы → встраивание в UI → подпись UI → проверка обеих подписей/временных меток → публикация SHA-256 **после подписи**.
 
-The signing certificate and private key are managed by SignPath Foundation. Private signing material is never stored in this repository or in a GitHub Actions secret.
-
-## Team roles
-
-GeniaFirewall is currently a single-maintainer project.
-
-- Committer and reviewer: [GeniaSoftWin (`@geniasoftwin`)](https://github.com/geniasoftwin)
-- Signing approver: [GeniaSoftWin (`@geniasoftwin`)](https://github.com/geniasoftwin)
-
-External contributions require maintainer review before merge. Every production signing request requires an explicit manual approval in SignPath. These roles will be separated when another trusted maintainer joins the project.
-
-## Security response
-
-If a signing key, signing workflow, release artifact, or maintainer account is suspected of compromise, release signing is stopped immediately. The affected artifact is withdrawn, SignPath Foundation is notified, and certificate revocation is requested when appropriate. Security reports follow [`SECURITY.md`](SECURITY.md).
-
-Runtime data handling is documented in [`PRIVACY.md`](PRIVACY.md).
+SHA-256 подтверждает соответствие опубликованному хешу, **но не личность издателя**. Приватные ключи и signing secrets не должны попадать в репозиторий.
