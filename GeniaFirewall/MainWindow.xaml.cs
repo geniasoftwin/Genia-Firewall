@@ -52,6 +52,7 @@ public partial class MainWindow : Window
     private FirewallMode _mode = FirewallMode.Normal;
     private bool _allowExit;
     private bool _trayHintShown;
+    private bool _backgroundStartupHidden;
     private bool _promptOpen;
     private bool _initializing = true;
     private bool _activityDirty;
@@ -79,6 +80,15 @@ public partial class MainWindow : Window
         _wfpFirewall = new WfpServiceBackend(_serviceClient);
         _firewall = _windowsFirewall;
         InitializeComponent();
+        if (_startedInBackground)
+        {
+            // StartupUri calls Show() before Loaded. Keep that initial native window
+            // invisible and out of the taskbar during background initialization.
+            Opacity = 0;
+            ShowInTaskbar = false;
+            ShowActivated = false;
+        }
+
         LocalizationService.Configure(UiLanguage.Auto);
         DataContext = this;
         _diagnostics = new DiagnosticsService(_store.DataDirectory);
@@ -119,6 +129,14 @@ public partial class MainWindow : Window
 
     private async void MainWindow_Loaded(object sender, RoutedEventArgs e)
     {
+        if (_startedInBackground && !_backgroundStartupHidden)
+        {
+            // Hide before asynchronous service/WFP and application loading begins.
+            // Do not show a 'hidden to tray' hint or capture the startup window position.
+            _backgroundStartupHidden = true;
+            Hide();
+        }
+
         string? serviceStartupNotice = null;
         var settingsNeedSave = false;
         try
@@ -360,10 +378,6 @@ public partial class MainWindow : Window
             if (changedExecutables > 0 && _settings.ShowTrayNotifications)
                 _trayIcon.ShowChangedApplicationsHint(changedExecutables);
 
-            if (_startedInBackground)
-            {
-                _ = Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, new Action(() => HideToTray(showHint: false)));
-            }
         }
         catch (Exception ex)
         {
@@ -445,6 +459,11 @@ public partial class MainWindow : Window
 
     private void RestoreFromTray()
     {
+        // The first user-requested frame must be fully visible after hidden startup.
+        Opacity = 1;
+        ShowInTaskbar = true;
+        ShowActivated = true;
+
         if (!IsVisible)
             Show();
 
