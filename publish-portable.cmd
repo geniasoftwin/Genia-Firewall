@@ -59,6 +59,10 @@ if errorlevel 1 goto :publish_error
 if not exist "%LAUNCHER_STAGE%\GeniaFirewall.Autostart.exe" goto :publish_error
 for %%F in ("%LAUNCHER_STAGE%\GeniaFirewall.Autostart.exe") do set "EMBEDDED_AUTOSTART=%%~fF"
 
+echo Verifying fail-closed NativeAOT launcher before embedding...
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File ".\tools\Test-AutostartLauncher.ps1" -LauncherPath "%EMBEDDED_AUTOSTART%"
+if errorlevel 1 goto :publish_error
+
 echo.
 echo [2/3] Publishing the embedded GeniaFirewall.Service payload...
 dotnet publish "%SERVICE_PROJECT%" ^
