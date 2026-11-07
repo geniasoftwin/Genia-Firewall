@@ -7,10 +7,12 @@ set "LABEL=0.7.4-RC3"
 set "DISPLAY_VERSION=%LABEL:-= %"
 set "OUT=.\publish\GeniaFirewall-%LABEL%-win-x64"
 set "SERVICE_STAGE=.\publish\.service-%LABEL%-win-x64"
+set "LAUNCHER_STAGE=.\publish\.launcher-%LABEL%-win-x64"
 set "ZIP=.\publish\GeniaFirewall-%LABEL%-SingleExe-Portable-win-x64.zip"
 set "SHA=.\publish\GeniaFirewall-%LABEL%-SHA256.txt"
 set "UI_PROJECT=.\GeniaFirewall\GeniaFirewall.csproj"
 set "SERVICE_PROJECT=.\GeniaFirewall.Service\GeniaFirewall.Service.csproj"
+set "LAUNCHER_PROJECT=.\GeniaFirewall.Autostart\GeniaFirewall.Autostart.csproj"
 set "PROTOCOL_PROJECT=.\GeniaFirewall.Protocol\GeniaFirewall.Protocol.csproj"
 set "MANIFEST=.\GeniaFirewall\app.manifest"
 set "SERVICE_MANIFEST=.\GeniaFirewall.Service\app.manifest"
@@ -33,17 +35,32 @@ findstr /L /C:"%DISPLAY_VERSION%" "%STRINGS_RU%" >nul || goto :version_error
 findstr /L /C:"%DISPLAY_VERSION%" "%STRINGS_EN%" >nul || goto :version_error
 
 echo Cleaning stale bin/obj and old publish output...
-for %%D in (".\GeniaFirewall\bin" ".\GeniaFirewall\obj" ".\GeniaFirewall.Service\bin" ".\GeniaFirewall.Service\obj" ".\GeniaFirewall.Protocol\bin" ".\GeniaFirewall.Protocol\obj") do (
+for %%D in (".\GeniaFirewall\bin" ".\GeniaFirewall\obj" ".\GeniaFirewall.Service\bin" ".\GeniaFirewall.Service\obj" ".\GeniaFirewall.Protocol\bin" ".\GeniaFirewall.Protocol\obj" ".\GeniaFirewall.Autostart\bin" ".\GeniaFirewall.Autostart\obj") do (
   if exist %%~D rmdir /s /q %%~D
 )
 if exist "%OUT%" rmdir /s /q "%OUT%"
 if exist "%SERVICE_STAGE%" rmdir /s /q "%SERVICE_STAGE%"
+if exist "%LAUNCHER_STAGE%" rmdir /s /q "%LAUNCHER_STAGE%"
 if exist "%ZIP%" del /q "%ZIP%"
 if exist "%SHA%" del /q "%SHA%"
 if not exist ".\publish" mkdir ".\publish"
 
 echo.
-echo [1/2] Publishing the embedded GeniaFirewall.Service payload...
+echo [1/3] Publishing the console-free NativeAOT WinExe autostart launcher...
+dotnet publish "%LAUNCHER_PROJECT%" ^
+  -c Release ^
+  -r win-x64 ^
+  --self-contained true ^
+  -p:PublishAot=true ^
+  -p:DebugType=None ^
+  -p:DebugSymbols=false ^
+  -o "%LAUNCHER_STAGE%"
+if errorlevel 1 goto :publish_error
+if not exist "%LAUNCHER_STAGE%\GeniaFirewall.Autostart.exe" goto :publish_error
+for %%F in ("%LAUNCHER_STAGE%\GeniaFirewall.Autostart.exe") do set "EMBEDDED_AUTOSTART=%%~fF"
+
+echo.
+echo [2/3] Publishing the embedded GeniaFirewall.Service payload...
 dotnet publish "%SERVICE_PROJECT%" ^
   -c Release ^
   -r win-x64 ^
@@ -61,7 +78,7 @@ if not exist "%SERVICE_STAGE%\GeniaFirewall.Service.exe" goto :publish_error
 for %%F in ("%SERVICE_STAGE%\GeniaFirewall.Service.exe") do set "EMBEDDED_SERVICE=%%~fF"
 
 echo.
-echo [2/2] Publishing the single-EXE GeniaFirewall portable UI...
+echo [3/3] Publishing the single-EXE GeniaFirewall portable UI...
 dotnet publish "%UI_PROJECT%" ^
   -c Release ^
   -r win-x64 ^
@@ -73,6 +90,7 @@ dotnet publish "%UI_PROJECT%" ^
   -p:DebugType=None ^
   -p:DebugSymbols=false ^
   "-p:EmbeddedServicePath=%EMBEDDED_SERVICE%" ^
+  "-p:EmbeddedAutostartPath=%EMBEDDED_AUTOSTART%" ^
   -p:RequireEmbeddedService=true ^
   -o "%OUT%"
 if errorlevel 1 goto :publish_error
@@ -84,6 +102,7 @@ powershell.exe -NoProfile -ExecutionPolicy Bypass -Command "$expected='%VERSION%
 if errorlevel 1 goto :layout_error
 
 rmdir /s /q "%SERVICE_STAGE%"
+rmdir /s /q "%LAUNCHER_STAGE%"
 
 echo.
 echo Creating one-file portable ZIP...

@@ -33,11 +33,19 @@
     <EmbeddedResource Include="$(EmbeddedServicePath)"
                       LogicalName="GeniaFirewall.Payload.GeniaFirewall.Service.exe" />
   </ItemGroup>
+  <ItemGroup Condition="'$(EmbeddedAutostartPath)' != ''">
+    <EmbeddedResource Include="$(EmbeddedAutostartPath)"
+                      LogicalName="GeniaFirewall.Payload.GeniaFirewall.Autostart.exe" />
+  </ItemGroup>
 
   <Target Name="ValidateEmbeddedServicePayload" BeforeTargets="PrepareForBuild" Condition="'$(RequireEmbeddedService)' == 'true'">
     <Error Condition="'$(EmbeddedServicePath)' == ''"
            Text="EmbeddedServicePath is required for the single-EXE portable publish." />
     <Error Condition="'$(EmbeddedServicePath)' != '' and !Exists('$(EmbeddedServicePath)')"
            Text="Embedded GeniaFirewall.Service payload was not found: $(EmbeddedServicePath)" />
+    <Error Condition="'$(EmbeddedAutostartPath)' == ''"
+           Text="EmbeddedAutostartPath is required for the console-free SHA-256 autostart." />
+    <Error Condition="'$(EmbeddedAutostartPath)' != '' and !Exists('$(EmbeddedAutostartPath)')"
+           Text="Embedded GeniaFirewall.Autostart payload was not found: $(EmbeddedAutostartPath)" />
   </Target>
 </Project>

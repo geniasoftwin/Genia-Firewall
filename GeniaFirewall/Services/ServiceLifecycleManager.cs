@@ -29,6 +29,8 @@ public sealed record ServiceLifecycleStatus(
 public sealed class ServiceLifecycleManager
 {
     private const string EmbeddedServiceResourceName = "GeniaFirewall.Payload.GeniaFirewall.Service.exe";
+    private const string EmbeddedAutostartResourceName = "GeniaFirewall.Payload.GeniaFirewall.Autostart.exe";
+    private const string AutostartFileName = "GeniaFirewall.Autostart.exe";
     private const string ServiceFileName = "GeniaFirewall.Service.exe";
     private const string ServiceDescription = "GeniaFirewall privileged WFP policy service.";
     private const string DirectorySddl = "D:P(A;OICI;FA;;;SY)(A;OICI;FA;;;BA)";
@@ -74,6 +76,9 @@ public sealed class ServiceLifecycleManager
     private static readonly Lazy<byte[]> EmbeddedServiceHash = new(
         ComputeEmbeddedServiceHash,
         LazyThreadSafetyMode.ExecutionAndPublication);
+    private static readonly Lazy<byte[]> EmbeddedAutostartHash = new(
+        () => SHA256.HashData(ReadEmbeddedAutostartPayload()),
+        LazyThreadSafetyMode.ExecutionAndPublication);
 
     public ServiceLifecycleManager()
     {
@@ -84,6 +89,8 @@ public sealed class ServiceLifecycleManager
         ProductDirectory = Path.Combine(programFiles, "GeniaFirewall");
         ServiceDirectory = Path.Combine(ProductDirectory, "Service");
         ServiceBinaryPath = Path.Combine(ServiceDirectory, ServiceFileName);
+        AutostartDirectory = Path.Combine(ProductDirectory, "Autostart");
+        AutostartLauncherPath = Path.Combine(AutostartDirectory, AutostartFileName);
         StagedServiceBinaryPath = ServiceBinaryPath + ".new";
         RollbackServiceBinaryPath = ServiceBinaryPath + ".previous";
 
@@ -107,6 +114,8 @@ public sealed class ServiceLifecycleManager
     public string ProductDirectory { get; }
     public string ServiceDirectory { get; }
     public string ServiceBinaryPath { get; }
+    public string AutostartDirectory { get; }
+    public string AutostartLauncherPath { get; }
     private string StagedServiceBinaryPath { get; }
     private string RollbackServiceBinaryPath { get; }
     private string ServiceStateProductDirectory { get; }
@@ -189,6 +198,129 @@ public sealed class ServiceLifecycleManager
         {
             createdService?.Dispose();
         }
+    }
+
+
+    // Uses the same protected SDDL/reparse-point checks as the WFP service,
+    // but keeps launcher files independent of the service uninstall lifecycle.
+    public string EnsureAutostartLauncherInstalled()
+    {
+        EnsureSupportedAndElevated();
+        if (string.IsNullOrWhiteSpace(ProductDirectory))
+            throw new InvalidOperationException("Program Files path unavailable.");
+
+        Directory.CreateDirectory(ProductDirectory);
+        RejectReparsePoint(ProductDirectory);
+        ApplyProtectedDacl(ProductDirectory, DirectorySddl);
+        Directory.CreateDirectory(AutostartDirectory);
+        RejectReparsePoint(AutostartDirectory);
+        ApplyProtectedDacl(AutostartDirectory, DirectorySddl);
+
+        var payload = ReadEmbeddedAutostartPayload();
+        var hash = SHA256.HashData(payload);
+        if (File.Exists(AutostartLauncherPath))
+        {
+            ProtectFile(AutostartLauncherPath);
+            if (HashesEqual(hash, ComputeFileHash(AutostartLauncherPath)))
+                return AutostartLauncherPath;
+        }
+
+        var stage = AutostartLauncherPath + ".new";
+        var backup = AutostartLauncherPath + ".previous";
+        if (File.Exists(stage))
+            DeleteFileWithRetry(stage, TimeSpan.FromSeconds(5));
+        if (File.Exists(backup))
+            DeleteFileWithRetry(backup, TimeSpan.FromSeconds(5));
+
+        var existed = File.Exists(AutostartLauncherPath);
+        var replaced = false;
+        try
+        {
+            using (var stream = new FileStream(stage, FileMode.CreateNew, FileAccess.Write,
+                       FileShare.None, 64 * 1024, FileOptions.WriteThrough))
+            {
+                stream.Write(payload);
+                stream.Flush(flushToDisk: true);
+            }
+
+            ProtectFile(stage);
+            if (!HashesEqual(hash, ComputeFileHash(stage)))
+                throw new InvalidDataException("Autostart launcher staging SHA-256 failed.");
+
+            if (existed)
+                File.Replace(stage, AutostartLauncherPath, backup, ignoreMetadataErrors: false);
+            else
+                File.Move(stage, AutostartLauncherPath);
+            replaced = true;
+
+            ProtectFile(AutostartLauncherPath);
+            if (!IsVerifiedAutostartLauncherPresent())
+                throw new InvalidDataException("Autostart launcher final verification failed.");
+
+            if (File.Exists(backup))
+                DeleteFileWithRetry(backup, TimeSpan.FromSeconds(5));
+            return AutostartLauncherPath;
+        }
+        catch
+        {
+            if (replaced)
+            {
+                if (existed && File.Exists(backup))
+                    File.Replace(backup, AutostartLauncherPath, null, ignoreMetadataErrors: false);
+                else if (!existed)
+                    DeleteFileWithRetry(AutostartLauncherPath, TimeSpan.FromSeconds(5));
+            }
+            throw;
+        }
+        finally
+        {
+            TryDeleteFile(stage);
+        }
+    }
+
+    public bool IsVerifiedAutostartLauncherPresent()
+    {
+        try
+        {
+            return File.Exists(AutostartLauncherPath) &&
+                   IsProtectedPath(ProductDirectory) &&
+                   IsProtectedPath(AutostartDirectory) &&
+                   IsProtectedPath(AutostartLauncherPath) &&
+                   HashesEqual(EmbeddedAutostartHash.Value, ComputeFileHash(AutostartLauncherPath));
+        }
+        catch { return false; }
+    }
+
+    public void RemoveAutostartLauncher()
+    {
+        EnsureSupportedAndElevated();
+        if (!Directory.Exists(AutostartDirectory))
+            return;
+
+        RejectReparsePoint(ProductDirectory);
+        RejectReparsePoint(AutostartDirectory);
+        DeleteFileWithRetry(AutostartLauncherPath + ".new", TimeSpan.FromSeconds(5));
+        DeleteFileWithRetry(AutostartLauncherPath + ".previous", TimeSpan.FromSeconds(5));
+        DeleteFileWithRetry(AutostartLauncherPath, TimeSpan.FromSeconds(5));
+        if (Directory.EnumerateFileSystemEntries(AutostartDirectory).Any())
+            throw new IOException("Unexpected files in autostart directory; not deleting it recursively.");
+        Directory.Delete(AutostartDirectory, recursive: false);
+    }
+
+    private static byte[] ReadEmbeddedAutostartPayload()
+    {
+        using var resource = Assembly.GetExecutingAssembly()
+            .GetManifestResourceStream(EmbeddedAutostartResourceName)
+            ?? throw new InvalidOperationException("Embedded autostart launcher missing from portable build.");
+        if (resource.Length < 1024 || resource.Length > 32L * 1024 * 1024)
+            throw new InvalidDataException("Invalid embedded launcher payload size.");
+
+        using var memory = new MemoryStream((int)resource.Length);
+        resource.CopyTo(memory);
+        var payload = memory.ToArray();
+        if (payload[0] != (byte)'M' || payload[1] != (byte)'Z')
+            throw new InvalidDataException("Embedded autostart payload is not a PE.");
+        return payload;
     }
 
     public ServiceLifecycleStatus DeactivateAndRemove()

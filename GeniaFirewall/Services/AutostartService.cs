@@ -17,6 +17,7 @@ public sealed class AutostartService
     private const string LegacyValueName = "GeniaFirewall";
     private const string TaskName = "GeniaFirewall Portable Autostart";
     private const string TaskNamespace = "http://schemas.microsoft.com/windows/2004/02/mit/task";
+    private readonly ServiceLifecycleManager _launcherLifecycle = new();
 
     public bool IsEnabled()
     {
@@ -35,7 +36,8 @@ public sealed class AutostartService
         try
         {
             var expected = BuildExpectedTaskAction();
-            return PathsEqual(taskInfo.Command, expected.Command) &&
+            return _launcherLifecycle.IsVerifiedAutostartLauncherPresent() &&
+                   PathsEqual(taskInfo.Command, expected.Command) &&
                    string.Equals(taskInfo.Arguments, expected.Arguments, StringComparison.Ordinal);
         }
         catch
@@ -48,6 +50,7 @@ public sealed class AutostartService
     {
         if (enabled)
         {
+            _launcherLifecycle.EnsureAutostartLauncherInstalled();
             CreateOrReplaceScheduledTask();
             RemoveLegacyRunEntry();
         }
@@ -55,6 +58,7 @@ public sealed class AutostartService
         {
             DeleteScheduledTask();
             RemoveLegacyRunEntry();
+            _launcherLifecycle.RemoveAutostartLauncher();
         }
     }
 
@@ -195,34 +199,14 @@ public sealed class AutostartService
         }
     }
 
-    private static (string Command, string Arguments) BuildExpectedTaskAction()
+    private (string Command, string Arguments) BuildExpectedTaskAction()
     {
         var executable = GetCurrentExecutablePath();
-        using var executableStream = new FileStream(executable, FileMode.Open, FileAccess.Read, FileShare.Read);
-        var expectedHash = Convert.ToHexString(SHA256.HashData(executableStream));
-        var powerShell = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.Windows),
-            "System32",
-            "WindowsPowerShell",
-            "v1.0",
-            "powershell.exe");
-
-        if (!File.Exists(powerShell))
-            throw new FileNotFoundException("Не найден системный Windows PowerShell.", powerShell);
-
-        var escapedPath = executable.Replace("'", "''", StringComparison.Ordinal);
-        var script =
-            "$ErrorActionPreference='Stop';" +
-            $"$p='{escapedPath}';" +
-            $"$h='{expectedHash}';" +
-            "if(-not (Test-Path -LiteralPath $p -PathType Leaf)){exit 20};" +
-            "$a=(Get-FileHash -Algorithm SHA256 -LiteralPath $p).Hash;" +
-            "if($a -ne $h){exit 21};" +
-            "Start-Process -FilePath $p -ArgumentList '--background'";
-
-        var encodedCommand = Convert.ToBase64String(Encoding.Unicode.GetBytes(script));
-        var arguments = $"-NoLogo -NoProfile -NonInteractive -WindowStyle Hidden -EncodedCommand {encodedCommand}";
-        return (powerShell, arguments);
+        using var stream = new FileStream(executable, FileMode.Open, FileAccess.Read, FileShare.Read);
+        var hash = Convert.ToHexString(SHA256.HashData(stream));
+        // Pin the portable EXE hash in the task; run only the protected GUI verifier.
+        return (_launcherLifecycle.AutostartLauncherPath,
+                $"--sha256 {hash} --target \"{executable}\"");
     }
 
     private static string BuildTaskXml(string userSid, string command, string arguments, string executable)
@@ -238,7 +222,7 @@ public sealed class AutostartService
         xml.AppendLine("  <RegistrationInfo>");
         xml.AppendLine($"    <Date>{Escape(now)}</Date>");
         xml.AppendLine("    <Author>GeniaFirewall</Author>");
-        xml.AppendLine("    <Description>Starts GeniaFirewall Portable in the tray after logon. The action verifies the configured executable SHA-256 before elevation.</Description>");
+        xml.AppendLine("    <Description>Starts GeniaFirewall Portable in the tray after logon. Protected GUI launcher verifies SHA-256 before launch.</Description>");
         xml.AppendLine("  </RegistrationInfo>");
         xml.AppendLine("  <Triggers>");
         xml.AppendLine("    <LogonTrigger>");
