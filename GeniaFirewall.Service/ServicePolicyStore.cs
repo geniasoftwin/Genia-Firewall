@@ -18,6 +18,8 @@ internal sealed class ServicePolicyStore
         var programData = Environment.GetFolderPath(Environment.SpecialFolder.CommonApplicationData);
         DirectoryPath = Path.Combine(programData, "GeniaFirewall", "Service");
         PolicyPath = Path.Combine(DirectoryPath, "wfp-policy.json");
+        ServiceStorageSecurity.EnsureProtectedDirectory(DirectoryPath);
+        ServiceStorageSecurity.ProtectFile(PolicyPath);
     }
 
     public string DirectoryPath { get; }
@@ -28,6 +30,8 @@ internal sealed class ServicePolicyStore
     {
         if (!File.Exists(PolicyPath))
             return DisabledPolicy();
+
+        ServiceStorageSecurity.ProtectFile(PolicyPath);
 
         var length = new FileInfo(PolicyPath).Length;
         if (length > MaxPolicyBytes)
@@ -46,7 +50,7 @@ internal sealed class ServicePolicyStore
 
     public void Save(WfpPolicySnapshot policy)
     {
-        Directory.CreateDirectory(DirectoryPath);
+        ServiceStorageSecurity.EnsureProtectedDirectory(DirectoryPath);
         var json = JsonSerializer.SerializeToUtf8Bytes(policy, _jsonOptions);
         if (json.LongLength > MaxPolicyBytes)
             throw new InvalidDataException($"WFP policy is too large ({json.LongLength} bytes).");
@@ -54,9 +58,10 @@ internal sealed class ServicePolicyStore
         var temporary = PolicyPath + ".tmp";
         try
         {
+            ServiceStorageSecurity.DeleteRegularFileIfExists(temporary);
             using (var stream = new FileStream(
                        temporary,
-                       FileMode.Create,
+                       FileMode.CreateNew,
                        FileAccess.Write,
                        FileShare.None,
                        16 * 1024,
@@ -66,7 +71,9 @@ internal sealed class ServicePolicyStore
                 stream.Flush(flushToDisk: true);
             }
 
+            ServiceStorageSecurity.ProtectFile(temporary);
             File.Move(temporary, PolicyPath, overwrite: true);
+            ServiceStorageSecurity.ProtectFile(PolicyPath);
         }
         finally
         {
