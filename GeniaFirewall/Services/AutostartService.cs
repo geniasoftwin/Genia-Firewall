@@ -90,7 +90,7 @@ public sealed class AutostartService
         return LocalizationService.EffectiveLanguage == UiLanguage.Russian ? "Отключена · задача автозагрузки не настроена." : "Disabled · autostart task is not configured.";
     }
 
-    private static void CreateOrReplaceScheduledTask()
+    private void CreateOrReplaceScheduledTask()
     {
         var executable = GetCurrentExecutablePath();
         var userSid = WindowsIdentity.GetCurrent().User?.Value;
