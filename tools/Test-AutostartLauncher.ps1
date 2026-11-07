@@ -32,7 +32,7 @@ function Assert-ExitCode([string] $label, [string] $digest, [string] $target, [i
 # Verify the actual published launcher is a GUI-subsystem Windows PE, not CUI.
 $stream = [System.IO.File]::Open($exe, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
 try {
-    $reader = New-Object System.IO.BinaryReader($stream)
+    $reader = [System.IO.BinaryReader]::new($stream)
     if ($reader.ReadUInt16() -ne 0x5A4D) { throw 'Missing DOS PE header' }
     $stream.Seek(0x3C, [System.IO.SeekOrigin]::Begin) | Out-Null
     $peOffset = $reader.ReadInt32()
