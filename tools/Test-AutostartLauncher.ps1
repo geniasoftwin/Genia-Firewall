@@ -22,11 +22,29 @@ function Assert-ExitCode([string] $label, [string] $digest, [string] $target, [i
         }
         Write-Output ("{0}={1}" -f $label, $process.ExitCode)
         if ($process.ExitCode -ne $expected) {
-            throw "$label: expected exit code $expected, got $($process.ExitCode)"
+            throw "${label}: expected exit code $expected, got $($process.ExitCode)"
         }
     } finally {
         $process.Dispose()
     }
+}
+
+# Verify the actual published launcher is a GUI-subsystem Windows PE, not CUI.
+$stream = [System.IO.File]::Open($exe, [System.IO.FileMode]::Open, [System.IO.FileAccess]::Read, [System.IO.FileShare]::Read)
+try {
+    $reader = New-Object System.IO.BinaryReader($stream)
+    if ($reader.ReadUInt16() -ne 0x5A4D) { throw 'Missing DOS PE header' }
+    $stream.Seek(0x3C, [System.IO.SeekOrigin]::Begin) | Out-Null
+    $peOffset = $reader.ReadInt32()
+    if ($peOffset -lt 0x40 -or $peOffset -gt ($stream.Length - 96)) { throw 'Invalid PE header offset' }
+    $stream.Seek($peOffset, [System.IO.SeekOrigin]::Begin) | Out-Null
+    if ($reader.ReadUInt32() -ne 0x00004550) { throw 'Missing PE signature' }
+    $stream.Seek($peOffset + 24 + 68, [System.IO.SeekOrigin]::Begin) | Out-Null
+    $subsystem = $reader.ReadUInt16()
+    Write-Output ("PE_SUBSYSTEM={0}" -f $subsystem)
+    if ($subsystem -ne 2) { throw 'Autostart helper is not a GUI-subsystem EXE' }
+} finally {
+    $stream.Dispose()
 }
 
 # Launching the helper itself as the valid target is safe: the child immediately
